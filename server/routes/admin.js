@@ -27,7 +27,8 @@ router.get('/stats', adminController.getPlatformStats);
 
 // Platform settings (dynamic Stripe key management)
 router.get('/settings', adminController.getSettings);
-router.put('/settings/:key', adminController.updateSetting);
 router.get('/settings/stripe-status', adminController.getStripeStatus);
+router.post('/settings/test-email', adminController.testEmail);
+router.put('/settings/:key', adminController.updateSetting);
 
 module.exports = router;

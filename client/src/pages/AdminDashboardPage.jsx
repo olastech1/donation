@@ -91,13 +91,29 @@ export default function AdminDashboardPage() {
 
   const handleSettingUpdate = async (key, value) => {
     try {
+      setActionLoading(key);
       await adminAPI.updateSetting(key, value);
-      setMessage({ type: 'success', text: `"${key}" updated successfully.` });
-      // Refresh settings
+      setMessage({ type: 'success', text: `Setting updated successfully.` });
       const res = await adminAPI.getSettings();
       setSettings(res.data.data);
     } catch (err) {
-      setMessage({ type: 'error', text: `Failed to update "${key}".` });
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to update setting.' });
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleTestEmail = async () => {
+    try {
+      setActionLoading('test-email');
+      const email = prompt("Enter an email address to send the test to:");
+      if (!email) return;
+      await adminAPI.testEmail({ to: email });
+      setMessage({ type: 'success', text: `Test email sent successfully to ${email}. Check your inbox!` });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to send test email. Check your SMTP settings.' });
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -354,15 +370,29 @@ export default function AdminDashboardPage() {
                       Stripe Integration
                     </h3>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>
-                      Update your Stripe API keys without touching the codebase. Keys are stored encrypted.
+                      Update your Stripe API keys securely.
                     </p>
+                    {settings.filter(s => s.setting_key.startsWith('stripe')).map(s => (
+                      <SettingField key={s.setting_key} setting={s} onSave={handleSettingUpdate} />
+                    ))}
+                  </div>
+                </div>
 
-                    {settings.filter(s => s.is_encrypted).map(s => (
-                      <SettingField
-                        key={s.setting_key}
-                        setting={s}
-                        onSave={handleSettingUpdate}
-                      />
+                <div className="card" style={{ marginBottom: '24px' }}>
+                  <div className="card-body" style={{ padding: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <h3 style={{ fontFamily: 'var(--font-display)', margin: 0, color: 'var(--slate-800)' }}>
+                        Email Server (SMTP)
+                      </h3>
+                      <button className="btn btn-secondary btn-sm" onClick={handleTestEmail} disabled={actionLoading === 'test-email'}>
+                        {actionLoading === 'test-email' ? 'Sending...' : '📧 Send Test Email'}
+                      </button>
+                    </div>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>
+                      Configure the automated email system.
+                    </p>
+                    {settings.filter(s => s.setting_key.startsWith('smtp')).map(s => (
+                      <SettingField key={s.setting_key} setting={s} onSave={handleSettingUpdate} />
                     ))}
                   </div>
                 </div>
@@ -370,18 +400,13 @@ export default function AdminDashboardPage() {
                 <div className="card">
                   <div className="card-body" style={{ padding: '24px' }}>
                     <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: '8px', color: 'var(--slate-800)' }}>
-                      Platform Settings
+                      Platform Details
                     </h3>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '24px' }}>
                       General configuration for Donate Plea.
                     </p>
-
-                    {settings.filter(s => !s.is_encrypted).map(s => (
-                      <SettingField
-                        key={s.setting_key}
-                        setting={s}
-                        onSave={handleSettingUpdate}
-                      />
+                    {settings.filter(s => !s.setting_key.startsWith('stripe') && !s.setting_key.startsWith('smtp')).map(s => (
+                      <SettingField key={s.setting_key} setting={s} onSave={handleSettingUpdate} />
                     ))}
                   </div>
                 </div>

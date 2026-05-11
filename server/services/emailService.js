@@ -113,4 +113,12 @@ module.exports = {
       <p>Your request to withdraw <strong>$${amount}</strong> from <strong>"${campaignTitle}"</strong> could not be processed at this time.</p>
       <p>Please log in to your dashboard to review your KYC status or contact support.</p>
     `),
+
+  // 5. Test Emails
+  sendTestEmail: (email) =>
+    sendEmail(email, 'SMTP Test Successful', `
+      <h3>Success!</h3>
+      <p>If you are reading this, your SMTP configuration on Donate Plea is working perfectly.</p>
+      <p>Automated emails will now be delivered successfully.</p>
+    `),
 };

@@ -70,6 +70,7 @@ export const adminAPI = {
   getSettings: () => api.get('/admin/settings'),
   updateSetting: (key, value) => api.put(`/admin/settings/${key}`, { value }),
   getStripeStatus: () => api.get('/admin/settings/stripe-status'),
+  testEmail: (data) => api.post('/admin/settings/test-email', data),
   getDonations: () => api.get('/admin/donations'),
 };
 

@@ -212,10 +212,30 @@ const getStripeStatus = async (req, res) => {
   }
 };
 
+/**
+ * POST /api/admin/settings/test-email
+ * Sends a test email to verify SMTP configuration
+ */
+const testEmail = async (req, res) => {
+  try {
+    const { to } = req.body;
+    if (!to) {
+      return res.status(400).json({ success: false, message: 'Recipient email is required.' });
+    }
+
+    await emailService.sendTestEmail(to);
+    
+    res.json({ success: true, message: 'Test email sent.' });
+  } catch (err) {
+    console.error('Test email error:', err);
+    res.status(500).json({ success: false, message: 'Failed to send test email.' });
+  }
+};
+
 module.exports = {
   getPendingCampaigns, approveCampaign, rejectCampaign,
   getPendingWithdrawals, approveWithdrawal, rejectWithdrawal,
   getAllDonations,
   getPlatformStats,
-  getSettings, updateSetting, getStripeStatus
+  getSettings, updateSetting, getStripeStatus, testEmail
 };
