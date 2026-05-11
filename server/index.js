@@ -23,7 +23,19 @@ const PORT = process.env.PORT || 5000;
 // ============================================================
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: function (origin, callback) {
+    const allowedOrigins = [
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+      'http://localhost:3000',
+      'http://localhost:5173'
+    ];
+    // Allow requests with no origin (mobile apps, Postman, webhooks)
+    if (!origin || allowedOrigins.some(o => origin.startsWith(o)) || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(morgan('dev'));
@@ -75,13 +87,16 @@ app.use((err, req, res, next) => {
 });
 
 // ============================================================
-// START SERVER
+// START SERVER (only in local dev — Vercel handles this automatically)
 // ============================================================
-app.listen(PORT, () => {
-  console.log(`\n🚀 Antigravity Tools API running on port ${PORT}`);
-  console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`💳 Payment: Stripe Checkout`);
-  console.log(`🗄️  Database: Neon PSQL\n`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`\n🚀 Antigravity Tools API running on port ${PORT}`);
+    console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
+    console.log(`💳 Payment: Stripe Checkout`);
+    console.log(`🗄️  Database: Neon PSQL\n`);
+  });
+}
 
+// Export for Vercel serverless
 module.exports = app;
