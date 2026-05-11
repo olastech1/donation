@@ -1,5 +1,5 @@
 -- ============================================================
--- ANTIGRAVITY TOOLS — Neon PSQL Schema (Stripe Edition)
+-- DONATE PLEA — Neon PSQL Schema (Stripe Edition)
 -- A crowdfunding donation platform
 -- ============================================================
 
@@ -59,8 +59,8 @@ INSERT INTO platform_settings (setting_key, setting_value, is_encrypted, descrip
     ('stripe_secret_key', '', TRUE, 'Stripe Secret Key (sk_live_... or sk_test_...)'),
     ('stripe_webhook_secret', '', TRUE, 'Stripe Webhook Signing Secret (whsec_...)'),
     ('platform_fee_percent', '2.5', FALSE, 'Platform fee percentage deducted from donations'),
-    ('platform_name', 'Antigravity Tools', FALSE, 'Display name of the platform'),
-    ('support_email', 'support@antigravitytools.com', FALSE, 'Platform support email');
+    ('platform_name', 'Donate Plea', FALSE, 'Display name of the platform'),
+    ('support_email', 'support@donateplea.com', FALSE, 'Platform support email');
 
 CREATE INDEX idx_platform_settings_key ON platform_settings(setting_key);
 

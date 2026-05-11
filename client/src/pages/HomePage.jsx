@@ -20,11 +20,11 @@ export default function HomePage() {
       <section className="hero" id="hero-section">
         <div className="container">
           <h1 className="animate-in">
-            Lift Someone Up<br />
-            <span className="gradient-text">With Antigravity</span>
+            Every Plea<br />
+            <span className="gradient-text">Deserves an Answer</span>
           </h1>
           <p className="animate-in" style={{ animationDelay: '0.1s' }}>
-            A transparent crowdfunding platform where every naira is tracked, 
+            A transparent crowdfunding platform where every dollar is tracked, 
             every campaign is verified, and no account is needed to make a difference.
           </p>
           <div className="hero-actions animate-in" style={{ animationDelay: '0.2s' }}>
@@ -95,7 +95,7 @@ export default function HomePage() {
         <div className="grid grid-3">
           {[
             { icon: '🎯', title: 'Find a Cause', desc: 'Browse verified campaigns across medical, education, community, and more.' },
-            { icon: '💳', title: 'Donate Instantly', desc: 'No account needed. Enter your amount, pay securely with Flutterwave, done.' },
+            { icon: '💳', title: 'Donate Instantly', desc: 'No account needed. Enter your amount, pay securely with Stripe, done.' },
             { icon: '📊', title: 'Track Your Impact', desc: 'Get a unique tracking link to see exactly how your donation is being used.' }
           ].map((step, i) => (
             <div key={i} className="card animate-in" style={{ animationDelay: `${i * 0.15}s`, textAlign: 'center' }}>

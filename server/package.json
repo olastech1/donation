@@ -1,7 +1,7 @@
 {
-  "name": "antigravity-tools-server",
+  "name": "donate-plea-server",
   "version": "1.0.0",
-  "description": "Backend API for Antigravity Tools crowdfunding platform",
+  "description": "Backend API for Donate Plea crowdfunding platform",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",

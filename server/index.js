@@ -1,5 +1,5 @@
 // ============================================================
-// ANTIGRAVITY TOOLS — Express Server (Stripe + Neon Edition)
+// DONATE PLEA — Express Server (Stripe + Neon Edition)
 // ============================================================
 require('dotenv').config();
 const express = require('express');
@@ -69,7 +69,7 @@ app.use('/api/admin', adminRoutes);
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    message: 'Antigravity Tools API is running.',
+    message: 'Donate Plea API is running.',
     stack: 'Stripe + Neon PSQL',
     timestamp: new Date().toISOString()
   });
@@ -91,7 +91,7 @@ app.use((err, req, res, next) => {
 // ============================================================
 if (!process.env.VERCEL) {
   app.listen(PORT, () => {
-    console.log(`\n🚀 Antigravity Tools API running on port ${PORT}`);
+    console.log(`\n🚀 Donate Plea API running on port ${PORT}`);
     console.log(`📡 Health check: http://localhost:${PORT}/api/health`);
     console.log(`💳 Payment: Stripe Checkout`);
     console.log(`🗄️  Database: Neon PSQL\n`);

@@ -16,7 +16,7 @@ export default function Navbar() {
   return (
     <nav className="navbar" id="main-navbar">
       <div className="navbar-inner">
-        <Link to="/" className="navbar-logo">⬆ Antigravity Tools</Link>
+        <Link to="/" className="navbar-logo">💜 Donate Plea</Link>
         <button className="navbar-hamburger" onClick={() => setOpen(!open)} aria-label="Toggle menu">
           {open ? '✕' : '☰'}
         </button>

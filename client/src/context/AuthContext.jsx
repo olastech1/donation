@@ -8,11 +8,11 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem('agt_token');
+    const token = localStorage.getItem('dp_token');
     if (token) {
       authAPI.getMe()
         .then(res => setUser(res.data.data))
-        .catch(() => localStorage.removeItem('agt_token'))
+        .catch(() => localStorage.removeItem('dp_token'))
         .finally(() => setLoading(false));
     } else {
       setLoading(false);
@@ -21,20 +21,20 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await authAPI.login({ email, password });
-    localStorage.setItem('agt_token', res.data.data.token);
+    localStorage.setItem('dp_token', res.data.data.token);
     setUser(res.data.data.user);
     return res.data;
   };
 
   const register = async (name, email, password) => {
     const res = await authAPI.register({ name, email, password });
-    localStorage.setItem('agt_token', res.data.data.token);
+    localStorage.setItem('dp_token', res.data.data.token);
     setUser(res.data.data.user);
     return res.data;
   };
 
   const logout = () => {
-    localStorage.removeItem('agt_token');
+    localStorage.removeItem('dp_token');
     setUser(null);
   };
 

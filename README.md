@@ -1,17 +1,17 @@
-# Antigravity Tools
+# Donate Plea
 
 A modern crowdfunding donation platform built with React, Node.js/Express, Stripe, and Neon PostgreSQL.
 
 ## Architecture
 
 ```
-antigravity-tools/
+donate-plea/
 ├── database/          # Neon PSQL schema & seed scripts
 │   ├── schema.sql     # Tables, indexes, triggers, platform_settings
 │   └── seed.sql       # Development test data
 │
 ├── server/            # Express.js API (Port 5000)
-│   ├── config/        # Neon DB connection pool
+│   ├── config/        # Neon DB connection pool + settings helper
 │   ├── middleware/     # JWT auth (4-tier: public/optional/auth/admin)
 │   ├── controllers/   # Business logic (auth, campaigns, donations, admin)
 │   ├── routes/        # API route definitions
@@ -29,8 +29,8 @@ antigravity-tools/
 
 ```bash
 # 1. Clone & install
-git clone https://github.com/YOUR_USERNAME/antigravity-tools.git
-cd antigravity-tools
+git clone https://github.com/olastech1/donation.git
+cd donation
 
 # 2. Set up environment
 cp server/.env.example server/.env
@@ -63,4 +63,4 @@ cd client && npm install && npm run dev
 | Database | PostgreSQL on Neon (serverless) |
 | Payments | Stripe Checkout + Webhooks |
 | Auth | JWT + bcrypt |
-| Deployment | Vercel / Render |
+| Deployment | Vercel |

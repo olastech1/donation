@@ -57,7 +57,7 @@ const initiateDonation = async (req, res) => {
           currency: 'usd',
           product_data: {
             name: `Donate to: ${campaign.title}`,
-            description: `Supporting "${campaign.title}" on Antigravity Tools`
+            description: `Supporting "${campaign.title}" on Donate Plea`
           },
           unit_amount: Math.round(parseFloat(amount) * 100)  // Stripe uses cents
         },
