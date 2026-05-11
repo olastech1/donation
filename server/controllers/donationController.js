@@ -198,13 +198,23 @@ const trackDonation = async (req, res) => {
   try {
     const { sessionId } = req.params;
 
-    const result = await pool.query(
-      `SELECT d.*, c.title AS campaign_title, c.description AS campaign_description,
+    let query = `
+      SELECT d.*, c.title AS campaign_title, c.description AS campaign_description,
               c.goal_amount, c.current_amount, c.status AS campaign_status, c.cover_image_url
        FROM donations d JOIN campaigns c ON d.campaign_id = c.id
-       WHERE d.stripe_checkout_session_id = $1`,
-      [sessionId]
-    );
+       WHERE d.stripe_checkout_session_id = $1
+    `;
+
+    if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId)) {
+      query = `
+        SELECT d.*, c.title AS campaign_title, c.description AS campaign_description,
+                c.goal_amount, c.current_amount, c.status AS campaign_status, c.cover_image_url
+         FROM donations d JOIN campaigns c ON d.campaign_id = c.id
+         WHERE d.id = $1 OR d.stripe_checkout_session_id = $1
+      `;
+    }
+
+    const result = await pool.query(query, [sessionId]);
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Donation not found.' });
     }
@@ -226,6 +236,7 @@ const trackDonation = async (req, res) => {
           created_at: d.created_at, session_id: d.stripe_checkout_session_id
         },
         campaign: {
+          id: d.campaign_id,
           title: d.campaign_title, description: d.campaign_description,
           goal_amount: d.goal_amount, current_amount: d.current_amount,
           progress_percent: progress, status: d.campaign_status,

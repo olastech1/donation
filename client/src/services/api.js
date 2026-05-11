@@ -62,6 +62,8 @@ export const updateAPI = {
 
 // --- Admin ---
 export const adminAPI = {
+  getUsers: () => api.get('/admin/users'),
+  updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
   getPending: () => api.get('/admin/campaigns/pending'),
   approve: (id) => api.put(`/admin/campaigns/${id}/approve`),
   reject: (id, reason) => api.put(`/admin/campaigns/${id}/reject`, { reason }),

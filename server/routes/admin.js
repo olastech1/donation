@@ -9,6 +9,10 @@ const { authenticate, requireAdmin } = require('../middleware/auth');
 // All admin routes require authentication + admin role
 router.use(authenticate, requireAdmin);
 
+// User Management
+router.get('/users', adminController.getAllUsers);
+router.put('/users/:id', adminController.updateUser);
+
 // Campaign vetting
 router.get('/campaigns/pending', adminController.getPendingCampaigns);
 router.put('/campaigns/:id/approve', adminController.approveCampaign);

@@ -5,6 +5,42 @@ const pool = require('../config/db');
 const { getAllSettings, setSetting, getSetting, getStripePublicKey } = require('../config/settings');
 const emailService = require('../services/emailService');
 
+// ─── User Management ──────────────────────────────────────
+
+const getAllUsers = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, email, role, kyc_status, created_at FROM users ORDER BY created_at DESC`
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+const updateUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, role } = req.body;
+
+    // Optional: add validation here
+
+    const result = await pool.query(
+      `UPDATE users SET name = $1, email = $2, role = $3, updated_at = NOW()
+       WHERE id = $4 RETURNING id, name, email, role, kyc_status, created_at`,
+      [name, email, role, id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'User not found.' });
+    }
+
+    res.json({ success: true, message: 'User updated successfully.', data: result.rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
 // ─── Campaign Vetting ─────────────────────────────────────
 
 const getPendingCampaigns = async (req, res) => {
@@ -275,6 +311,7 @@ const testEmail = async (req, res) => {
 };
 
 module.exports = {
+  getAllUsers, updateUser,
   getPendingCampaigns, approveCampaign, rejectCampaign,
   getPendingWithdrawals, approveWithdrawal, rejectWithdrawal,
   getAllKyc, approveKyc, rejectKyc,

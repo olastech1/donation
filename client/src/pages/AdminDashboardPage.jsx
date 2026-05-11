@@ -5,6 +5,7 @@ import { adminAPI } from '../services/api';
 
 const TABS = [
   { key: 'overview', label: '📊 Overview', icon: '📊' },
+  { key: 'users', label: '👥 Manage Users', icon: '👥' },
   { key: 'campaigns', label: '📋 Pending Campaigns', icon: '📋' },
   { key: 'kyc', label: '🛡️ KYC Reviews', icon: '🛡️' },
   { key: 'withdrawals', label: '💸 Withdrawals', icon: '💸' },
@@ -21,6 +22,7 @@ export default function AdminDashboardPage() {
   const [withdrawals, setWithdrawals] = useState([]);
   const [kycList, setKycList] = useState([]);
   const [donations, setDonations] = useState([]);
+  const [usersList, setUsersList] = useState([]);
   const [settings, setSettings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState('');
@@ -50,6 +52,9 @@ export default function AdminDashboardPage() {
         } else if (tab === 'kyc') {
           const res = await adminAPI.getAllKyc();
           setKycList(res.data.data);
+        } else if (tab === 'users') {
+          const res = await adminAPI.getUsers();
+          setUsersList(res.data.data);
         } else if (tab === 'donations') {
           const res = await adminAPI.getDonations();
           setDonations(res.data.data);
@@ -133,6 +138,19 @@ export default function AdminDashboardPage() {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to send test email. Check your SMTP settings.' });
     } finally {
       setActionLoading(null);
+    }
+  };
+
+  const handleUserUpdate = async (id, updatedData) => {
+    try {
+      setActionLoading(`user-${id}`);
+      const res = await adminAPI.updateUser(id, updatedData);
+      setUsersList(prev => prev.map(u => u.id === id ? res.data.data : u));
+      setMessage({ type: 'success', text: 'User updated successfully.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to update user.' });
+    } finally {
+      setActionLoading('');
     }
   };
 
@@ -393,6 +411,59 @@ export default function AdminDashboardPage() {
                     </div>
                   ))
                 )}
+              </div>
+            )}
+
+            {/* ── Users Tab ── */}
+            {tab === 'users' && (
+              <div className="animate-in">
+                <div className="card">
+                  <div className="card-body" style={{ padding: '24px' }}>
+                    <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--slate-800)', marginBottom: '16px' }}>Manage Users</h3>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
+                        <thead>
+                          <tr style={{ borderBottom: '2px solid var(--slate-200)', textAlign: 'left' }}>
+                            <th style={{ padding: '12px' }}>Name</th>
+                            <th style={{ padding: '12px' }}>Email</th>
+                            <th style={{ padding: '12px' }}>Role</th>
+                            <th style={{ padding: '12px' }}>KYC</th>
+                            <th style={{ padding: '12px' }}>Joined</th>
+                            <th style={{ padding: '12px', textAlign: 'right' }}>Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {usersList.map(u => (
+                            <tr key={u.id} style={{ borderBottom: '1px solid var(--slate-100)' }}>
+                              <td style={{ padding: '12px', fontWeight: 500 }}>{u.name}</td>
+                              <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{u.email}</td>
+                              <td style={{ padding: '12px' }}>
+                                <span className={`badge ${u.role === 'admin' ? 'badge-primary' : 'badge-category'}`}>{u.role}</span>
+                              </td>
+                              <td style={{ padding: '12px' }}>
+                                <span className={`badge ${u.kyc_status === 'verified' ? 'badge-success' : u.kyc_status === 'pending' ? 'badge-warning' : 'badge-danger'}`}>
+                                  {u.kyc_status}
+                                </span>
+                              </td>
+                              <td style={{ padding: '12px', color: 'var(--text-muted)' }}>{new Date(u.created_at).toLocaleDateString()}</td>
+                              <td style={{ padding: '12px', textAlign: 'right' }}>
+                                <button className="btn btn-secondary btn-sm" onClick={() => {
+                                  const newName = prompt('Enter new name:', u.name);
+                                  if (newName === null) return;
+                                  const newRole = prompt('Enter new role (admin or creator):', u.role);
+                                  if (newRole === null || !['admin', 'creator'].includes(newRole)) return alert('Invalid role');
+                                  handleUserUpdate(u.id, { name: newName, email: u.email, role: newRole });
+                                }} disabled={actionLoading === `user-${u.id}`}>
+                                  {actionLoading === `user-${u.id}` ? 'Saving...' : 'Edit'}
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 

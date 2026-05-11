@@ -11,6 +11,30 @@ export default function HomePage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Tracking State
+  const [trackId, setTrackId] = useState('');
+  const [trackResult, setTrackResult] = useState(null);
+  const [trackError, setTrackError] = useState('');
+  const [trackLoading, setTrackLoading] = useState(false);
+
+  const handleTrack = async (e) => {
+    e.preventDefault();
+    if (!trackId.trim()) return;
+    setTrackLoading(true);
+    setTrackError('');
+    setTrackResult(null);
+    try {
+      const res = await donationAPI.track(trackId.trim());
+      // The API returns an object like { donation, campaign, updates }
+      // We will extract what we need to display it cleanly.
+      setTrackResult(res.data.data);
+    } catch (err) {
+      setTrackError('Donation not found. Please verify your tracking ID and try again.');
+    } finally {
+      setTrackLoading(false);
+    }
+  };
+
   useEffect(() => {
     campaignAPI.list({ limit: 6 })
       .then(res => setCampaigns(res.data.data))
@@ -126,6 +150,70 @@ export default function HomePage() {
           </div>
         </section>
       )}
+
+      {/* Track Transaction Widget */}
+      <section className="container" style={{ padding: '40px 20px', marginBottom: '60px' }}>
+        <div className="card animate-in" style={{ maxWidth: '700px', margin: '0 auto', background: 'linear-gradient(145deg, var(--bg-secondary) 0%, var(--bg-primary) 100%)', border: '1px solid var(--slate-200)' }}>
+          <div className="card-body" style={{ padding: '40px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '12px' }}>🔍</div>
+              <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--slate-800)', marginBottom: '8px' }}>Track Your Impact</h2>
+              <p style={{ color: 'var(--text-muted)' }}>Enter your Donation ID or Stripe Session ID to track your payment status and see campaign updates.</p>
+            </div>
+            
+            <form onSubmit={handleTrack} style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="Enter Tracking ID (e.g., cs_test_...)" 
+                value={trackId} 
+                onChange={(e) => setTrackId(e.target.value)} 
+                required 
+                style={{ flex: 1 }}
+              />
+              <button type="submit" className="btn btn-primary" disabled={trackLoading || !trackId.trim()}>
+                {trackLoading ? 'Searching...' : 'Track'}
+              </button>
+            </form>
+
+            {trackError && (
+              <div style={{ padding: '12px', background: 'var(--rose-50)', color: 'var(--rose-600)', borderRadius: 'var(--radius-md)', fontSize: '0.9rem', textAlign: 'center' }}>
+                {trackError}
+              </div>
+            )}
+
+            {trackResult && (
+              <div className="animate-in" style={{ marginTop: '24px', padding: '24px', background: 'var(--bg-primary)', borderRadius: 'var(--radius-md)', border: '1px solid var(--slate-100)' }}>
+                <h4 style={{ fontFamily: 'var(--font-display)', marginBottom: '16px', color: 'var(--slate-800)', borderBottom: '1px solid var(--slate-100)', paddingBottom: '12px' }}>
+                  Transaction Details
+                </h4>
+                <div style={{ display: 'grid', gap: '12px', fontSize: '0.9rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Status:</span>
+                    <span className={`badge ${trackResult.donation.status === 'success' ? 'badge-success' : trackResult.donation.status === 'pending' ? 'badge-warning' : 'badge-danger'}`}>
+                      {trackResult.donation.status.toUpperCase()}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Amount:</span>
+                    <span style={{ fontWeight: 'bold', color: 'var(--slate-800)' }}>${Number(trackResult.donation.amount).toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Date:</span>
+                    <span style={{ color: 'var(--slate-800)' }}>{new Date(trackResult.donation.created_at).toLocaleString()}</span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span style={{ color: 'var(--text-muted)' }}>Supported Campaign:</span>
+                    <Link to={`/campaigns/${trackResult.campaign.id}`} style={{ fontWeight: 600, color: 'var(--primary)' }}>
+                      {trackResult.campaign.title}
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
 
       {/* How It Works */}
       <section className="container" style={{ padding: '60px 20px 80px' }} id="how-it-works">
