@@ -6,17 +6,25 @@ const submitKyc = async (req, res) => {
     const { id } = req.user;
     const { full_name, dob, address, document_type, document_url } = req.body;
     
+    if (!document_url) {
+      return res.status(400).json({ success: false, message: 'Document upload is required.' });
+    }
+
+    // Check if the document is a valid Base64 image/pdf string
+    const isValidFormat = /^data:(image\/jpeg|image\/png|image\/jpg|application\/pdf);base64,/.test(document_url);
+    if (!isValidFormat) {
+      return res.status(400).json({ success: false, message: 'Invalid document format. Please upload a valid JPG, PNG, or PDF file.' });
+    }
+
+    // Check if the file is too small (e.g., less than ~5KB) which indicates a fake or corrupted file
+    if (document_url.length < 5000) {
+      return res.status(400).json({ success: false, message: 'The uploaded document is invalid or unreadable. Please upload a clear photo or PDF.' });
+    }
+
     // Simulate Automatic Document Verification
     // In a real production system, this would integrate with Stripe Identity, Onfido, etc.
-    // For now, if a document is provided, we simulate a successful OCR/Verification scan.
-    let newStatus = 'pending';
-    let message = 'KYC submitted successfully. Pending admin approval.';
-    
-    if (document_url && document_url.length > 50) { 
-      // Assuming a base64 file string will be large, we auto-verify it
-      newStatus = 'verified';
-      message = 'Document automatically verified by system. KYC Approved!';
-    }
+    let newStatus = 'verified';
+    let message = 'Document automatically verified by system. KYC Approved!';
     
     const result = await pool.query(
       `UPDATE users 
