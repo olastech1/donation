@@ -15,8 +15,10 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
-      navigate('/dashboard');
+      const result = await login(email, password);
+      // Redirect based on role
+      const role = result?.data?.user?.role;
+      navigate(role === 'admin' ? '/admin' : '/');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed.');
     } finally {
