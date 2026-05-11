@@ -20,6 +20,12 @@ const requestWithdrawal = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Campaign not found or you are not the creator.' });
     }
 
+    // Verify KYC status
+    const userResult = await pool.query(`SELECT kyc_status FROM users WHERE id = $1`, [creatorId]);
+    if (userResult.rows[0].kyc_status !== 'verified') {
+      return res.status(403).json({ success: false, message: 'You must complete KYC verification before requesting a payout.' });
+    }
+
     const campaign = campaignResult.rows[0];
 
     // Check if they have enough balance

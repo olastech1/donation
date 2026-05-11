@@ -28,6 +28,11 @@ export default function CreatorDashboardPage() {
     campaign_id: '', amount: '', bank_name: '', account_number: '', account_name: ''
   });
 
+  // KYC Form State
+  const [kycForm, setKycForm] = useState({
+    full_name: '', dob: '', address: '', document_type: 'passport', document_url: ''
+  });
+
   useEffect(() => {
     if (!authLoading && !user) navigate('/login');
   }, [user, authLoading, navigate]);
@@ -62,10 +67,11 @@ export default function CreatorDashboardPage() {
     fetchData();
   }, [tab, user]);
 
-  const handleKycSubmit = async () => {
+  const handleKycSubmit = async (e) => {
+    e.preventDefault();
     try {
       setLoading(true);
-      const res = await userAPI.submitKyc();
+      const res = await userAPI.submitKyc(kycForm);
       setUserData(res.data.data);
       setMessage({ type: 'success', text: res.data.message });
     } catch (err) {
@@ -331,11 +337,42 @@ export default function CreatorDashboardPage() {
                       <div style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: 'var(--radius-md)' }}>
                         <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: '16px' }}>Submit Documents</h3>
                         <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginBottom: '16px' }}>
-                          For this platform version, you can automatically submit your KYC for review. In a full production environment, this would require ID document uploads.
+                          Please provide your true and accurate information to verify your identity. <br/>
+                          <strong>Pro Tip:</strong> Enter <strong>AUTO VERIFY</strong> as your Full Name to bypass manual admin review for testing.
                         </p>
-                        <button className="btn btn-primary" onClick={handleKycSubmit}>
-                          Submit KYC for Review
-                        </button>
+                        <form onSubmit={handleKycSubmit}>
+                          <div className="grid grid-2" style={{ marginBottom: '16px' }}>
+                            <div className="form-group">
+                              <label className="form-label">Full Legal Name</label>
+                              <input type="text" className="form-input" required value={kycForm.full_name} onChange={e => setKycForm({...kycForm, full_name: e.target.value})} placeholder="e.g. John Doe or AUTO VERIFY" />
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Date of Birth</label>
+                              <input type="date" className="form-input" required value={kycForm.dob} onChange={e => setKycForm({...kycForm, dob: e.target.value})} />
+                            </div>
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">Residential Address</label>
+                            <input type="text" className="form-input" required value={kycForm.address} onChange={e => setKycForm({...kycForm, address: e.target.value})} placeholder="Full address" />
+                          </div>
+                          <div className="grid grid-2" style={{ marginBottom: '16px' }}>
+                            <div className="form-group">
+                              <label className="form-label">Document Type</label>
+                              <select className="form-input" value={kycForm.document_type} onChange={e => setKycForm({...kycForm, document_type: e.target.value})}>
+                                <option value="passport">Passport</option>
+                                <option value="drivers_license">Driver's License</option>
+                                <option value="national_id">National ID</option>
+                              </select>
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Document URL or ID</label>
+                              <input type="text" className="form-input" required value={kycForm.document_url} onChange={e => setKycForm({...kycForm, document_url: e.target.value})} placeholder="Enter document number or mock URL" />
+                            </div>
+                          </div>
+                          <button type="submit" className="btn btn-primary" disabled={loading}>
+                            {loading ? 'Submitting...' : 'Submit KYC for Review'}
+                          </button>
+                        </form>
                       </div>
                     )}
                     

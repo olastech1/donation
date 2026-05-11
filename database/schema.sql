@@ -20,6 +20,11 @@ CREATE TABLE users (
                         CHECK (role IN ('admin', 'creator')),
     kyc_status      VARCHAR(30) NOT NULL DEFAULT 'not_submitted'
                         CHECK (kyc_status IN ('not_submitted', 'pending', 'verified', 'rejected')),
+    kyc_full_name   VARCHAR(255),
+    kyc_dob         DATE,
+    kyc_address     TEXT,
+    kyc_document_type VARCHAR(50),
+    kyc_document_url TEXT,
     avatar_url      TEXT,
     reset_token     VARCHAR(255),
     reset_token_expires TIMESTAMP WITH TIME ZONE,

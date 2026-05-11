@@ -36,8 +36,8 @@ export const campaignAPI = {
 
 // --- Users ---
 export const userAPI = {
-  getMe: () => api.get('/users/me'),
-  submitKyc: () => api.post('/users/kyc'),
+  getMe: () => api.get('/auth/me'),
+  submitKyc: (data) => api.post('/users/kyc', data),
 };
 
 // --- Withdrawals ---

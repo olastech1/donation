@@ -185,6 +185,15 @@ const createCampaign = async (req, res) => {
       });
     }
 
+    // Verify KYC status
+    const userResult = await pool.query(`SELECT kyc_status FROM users WHERE id = $1`, [creatorId]);
+    if (userResult.rows[0].kyc_status !== 'verified') {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'You must complete KYC verification before you can create a campaign.' 
+      });
+    }
+
     if (parseFloat(goal_amount) <= 0) {
       return res.status(400).json({
         success: false,
