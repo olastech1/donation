@@ -19,6 +19,8 @@ export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
   getMe: () => api.get('/auth/me'),
+  forgotPassword: (data) => api.post('/auth/forgot-password', data),
+  resetPassword: (data) => api.post('/auth/reset-password', data),
 };
 
 // --- Campaigns ---
@@ -63,9 +65,12 @@ export const adminAPI = {
   getPending: () => api.get('/admin/campaigns/pending'),
   approve: (id) => api.put(`/admin/campaigns/${id}/approve`),
   reject: (id, reason) => api.put(`/admin/campaigns/${id}/reject`, { reason }),
-  getWithdrawals: () => api.get('/admin/withdrawals'),
+  getPendingWithdrawals: () => api.get('/admin/withdrawals/pending'),
   approveWithdrawal: (id) => api.put(`/admin/withdrawals/${id}/approve`),
   rejectWithdrawal: (id) => api.put(`/admin/withdrawals/${id}/reject`),
+  getPendingKyc: () => api.get('/admin/kyc/pending'),
+  approveKyc: (id) => api.put(`/admin/kyc/${id}/approve`),
+  rejectKyc: (id) => api.put(`/admin/kyc/${id}/reject`),
   getStats: () => api.get('/admin/stats'),
   getSettings: () => api.get('/admin/settings'),
   updateSetting: (key, value) => api.put(`/admin/settings/${key}`, { value }),

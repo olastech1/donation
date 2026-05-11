@@ -6,6 +6,7 @@ import { adminAPI } from '../services/api';
 const TABS = [
   { key: 'overview', label: '📊 Overview', icon: '📊' },
   { key: 'campaigns', label: '📋 Pending Campaigns', icon: '📋' },
+  { key: 'kyc', label: '🛡️ KYC Reviews', icon: '🛡️' },
   { key: 'withdrawals', label: '💸 Withdrawals', icon: '💸' },
   { key: 'donations', label: '💳 All Donations', icon: '💳' },
   { key: 'settings', label: '⚙️ Settings', icon: '⚙️' },
@@ -18,6 +19,7 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
   const [pending, setPending] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
+  const [kycPending, setKycPending] = useState([]);
   const [donations, setDonations] = useState([]);
   const [settings, setSettings] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,8 +45,11 @@ export default function AdminDashboardPage() {
           const res = await adminAPI.getPending();
           setPending(res.data.data);
         } else if (tab === 'withdrawals') {
-          const res = await adminAPI.getWithdrawals();
+          const res = await adminAPI.getPendingWithdrawals();
           setWithdrawals(res.data.data);
+        } else if (tab === 'kyc') {
+          const res = await adminAPI.getPendingKyc();
+          setKycPending(res.data.data);
         } else if (tab === 'donations') {
           const res = await adminAPI.getDonations();
           setDonations(res.data.data);
@@ -84,6 +89,20 @@ export default function AdminDashboardPage() {
       setMessage({ type: 'success', text: `Withdrawal ${action}d.` });
     } catch (err) {
       setMessage({ type: 'error', text: `Failed to ${action} withdrawal.` });
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  const handleKycAction = async (id, action) => {
+    setActionLoading(`kyc-${id}`);
+    try {
+      if (action === 'approve') await adminAPI.approveKyc(id);
+      else await adminAPI.rejectKyc(id);
+      setKycPending(prev => prev.filter(k => k.id !== id));
+      setMessage({ type: 'success', text: `KYC ${action}d successfully.` });
+    } catch (err) {
+      setMessage({ type: 'error', text: `Failed to ${action} KYC.` });
     } finally {
       setActionLoading('');
     }
@@ -199,11 +218,14 @@ export default function AdminDashboardPage() {
                         <button className="btn btn-secondary btn-block" onClick={() => setTab('campaigns')}>
                           📋 Review Pending Campaigns ({stats.campaigns?.pending || 0})
                         </button>
+                        <button className="btn btn-secondary btn-block" onClick={() => setTab('kyc')}>
+                          🛡️ Review Pending KYC
+                        </button>
                         <button className="btn btn-secondary btn-block" onClick={() => setTab('withdrawals')}>
                           💸 Process Withdrawals
                         </button>
                         <button className="btn btn-secondary btn-block" onClick={() => setTab('settings')}>
-                          ⚙️ Manage Stripe Keys
+                          ⚙️ Manage Settings
                         </button>
                       </div>
                     </div>
@@ -261,6 +283,48 @@ export default function AdminDashboardPage() {
                               disabled={actionLoading === c.id}
                             >
                               {actionLoading === c.id ? '...' : '❌ Reject'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* ── KYC Tab ── */}
+            {tab === 'kyc' && (
+              <div className="animate-in">
+                {kycPending.length === 0 ? (
+                  <div className="card" style={{ textAlign: 'center' }}>
+                    <div className="card-body" style={{ padding: '60px 20px' }}>
+                      <div style={{ fontSize: '3rem', marginBottom: '16px' }}>🛡️</div>
+                      <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--slate-800)' }}>No pending KYC</h3>
+                      <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>All users are verified.</p>
+                    </div>
+                  </div>
+                ) : (
+                  kycPending.map(k => (
+                    <div key={k.id} className="card" style={{ marginBottom: '16px' }}>
+                      <div className="card-body" style={{ padding: '24px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                          <div>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '4px' }}>
+                              <span className="badge badge-warning">Pending Review</span>
+                            </div>
+                            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', color: 'var(--slate-800)' }}>{k.name}</h3>
+                            <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{k.email}</p>
+                            <p style={{ color: 'var(--slate-500)', fontSize: '0.8rem', marginTop: '4px' }}>
+                              Submitted: {new Date(k.created_at).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button className="btn btn-success btn-sm" onClick={() => handleKycAction(k.id, 'approve')} disabled={actionLoading === `kyc-${k.id}`}>
+                              {actionLoading === `kyc-${k.id}` ? '...' : '✅ Approve'}
+                            </button>
+                            <button className="btn btn-danger btn-sm" onClick={() => handleKycAction(k.id, 'reject')} disabled={actionLoading === `kyc-${k.id}`}>
+                              {actionLoading === `kyc-${k.id}` ? '...' : '❌ Reject'}
                             </button>
                           </div>
                         </div>

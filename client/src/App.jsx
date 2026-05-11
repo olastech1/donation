@@ -8,6 +8,8 @@ import TrackingPage from './pages/TrackingPage';
 import DonationCallbackPage from './pages/DonationCallbackPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import CreateCampaignPage from './pages/CreateCampaignPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import AboutPage from './pages/AboutPage';
@@ -41,6 +43,8 @@ function App() {
           <Route path="/donation/callback" element={<DonationCallbackPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/admin" element={<AdminDashboardPage />} />
           <Route path="/dashboard" element={<CreatorDashboardPage />} />
           <Route path="/about" element={<AboutPage />} />

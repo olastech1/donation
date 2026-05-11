@@ -39,9 +39,22 @@ export default function LoginPage() {
             <label className="form-label">Email</label>
             <input type="email" className="form-input" value={email} onChange={e => setEmail(e.target.value)} required id="login-email" />
           </div>
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <input type="password" className="form-input" value={password} onChange={e => setPassword(e.target.value)} required id="login-password" />
+          <div className="form-group" style={{ marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <label className="form-label" style={{ marginBottom: 0 }}>Password</label>
+              <Link to="/forgot-password" style={{ fontSize: '0.85rem', color: 'var(--primary)', textDecoration: 'none' }}>
+                Forgot Password?
+              </Link>
+            </div>
+            <input
+              type="password"
+              className="form-input"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              id="login-password"
+            />
           </div>
           <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={loading} id="login-submit">
             {loading ? 'Signing in...' : 'Sign In'}

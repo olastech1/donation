@@ -121,4 +121,14 @@ module.exports = {
       <p>If you are reading this, your SMTP configuration on Donate Plea is working perfectly.</p>
       <p>Automated emails will now be delivered successfully.</p>
     `),
+
+  // 6. Password Reset
+  sendPasswordResetEmail: (email, resetUrl) =>
+    sendEmail(email, 'Password Reset Request', `
+      <h3>Password Reset</h3>
+      <p>We received a request to reset your password for Donate Plea.</p>
+      <p>Click the button below to choose a new password. This link will expire in 1 hour.</p>
+      <a href="${resetUrl}" style="display: inline-block; background-color: #1e293b; color: #fff; padding: 10px 20px; text-decoration: none; border-radius: 4px; margin-top: 15px;">Reset Password</a>
+      <p style="margin-top: 20px; font-size: 12px; color: #64748b;">If you did not request this, please ignore this email.</p>
+    `),
 };

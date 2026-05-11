@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { campaignAPI, userAPI, withdrawalAPI } from '../services/api';
 
 const TABS = [
+  { key: 'profile', label: '👤 Profile', icon: '👤' },
   { key: 'campaigns', label: '📢 My Campaigns', icon: '📢' },
   { key: 'withdrawals', label: '💸 Withdrawals', icon: '💸' },
   { key: 'kyc', label: '🛡️ Identity (KYC)', icon: '🛡️' },
@@ -12,7 +13,7 @@ const TABS = [
 export default function CreatorDashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState('campaigns');
+  const [tab, setTab] = useState('profile');
   
   const [campaigns, setCampaigns] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
@@ -48,7 +49,7 @@ export default function CreatorDashboardPage() {
           ]);
           setWithdrawals(withRes.data.data);
           setCampaigns(campRes.data.data.filter(c => parseFloat(c.current_amount) > 0));
-        } else if (tab === 'kyc') {
+        } else if (tab === 'kyc' || tab === 'profile') {
           const res = await userAPI.getMe();
           setUserData(res.data.data);
         }
@@ -137,6 +138,40 @@ export default function CreatorDashboardPage() {
 
         {!loading && (
           <>
+            {/* ── Profile Tab ── */}
+            {tab === 'profile' && userData && (
+              <div className="animate-in">
+                <div className="card">
+                  <div className="card-body">
+                    <h2 style={{ fontFamily: 'var(--font-display)', color: 'var(--slate-800)', marginBottom: '24px' }}>My Profile</h2>
+                    
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '24px', marginBottom: '32px' }}>
+                      <div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '4px' }}>Full Name</div>
+                        <div style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--slate-800)' }}>{userData.name}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '4px' }}>Email Address</div>
+                        <div style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--slate-800)' }}>{userData.email}</div>
+                      </div>
+                      <div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '4px' }}>Account Type</div>
+                        <div style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--slate-800)' }}>
+                          <span className="badge badge-category">{userData.role.toUpperCase()}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', marginBottom: '4px' }}>Member Since</div>
+                        <div style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--slate-800)' }}>
+                          {new Date(userData.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* ── Campaigns Tab ── */}
             {tab === 'campaigns' && (
               <div className="animate-in">

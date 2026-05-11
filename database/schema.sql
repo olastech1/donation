@@ -21,6 +21,8 @@ CREATE TABLE users (
     kyc_status      VARCHAR(30) NOT NULL DEFAULT 'not_submitted'
                         CHECK (kyc_status IN ('not_submitted', 'pending', 'verified', 'rejected')),
     avatar_url      TEXT,
+    reset_token     VARCHAR(255),
+    reset_token_expires TIMESTAMP WITH TIME ZONE,
     created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

@@ -22,8 +22,13 @@ router.get('/withdrawals', adminController.getPendingWithdrawals);
 router.put('/withdrawals/:id/approve', adminController.approveWithdrawal);
 router.put('/withdrawals/:id/reject', adminController.rejectWithdrawal);
 
-// Platform metrics
+// Platform stats
 router.get('/stats', adminController.getPlatformStats);
+
+// KYC
+router.get('/kyc/pending', adminController.getPendingKyc);
+router.put('/kyc/:id/approve', adminController.approveKyc);
+router.put('/kyc/:id/reject', adminController.rejectKyc);
 
 // Platform settings (dynamic Stripe key management)
 router.get('/settings', adminController.getSettings);

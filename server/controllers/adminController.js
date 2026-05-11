@@ -59,6 +59,45 @@ const rejectCampaign = async (req, res) => {
   }
 };
 
+// ─── KYC Verification ─────────────────────────────────────
+
+const getPendingKyc = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, email, kyc_status, created_at FROM users WHERE kyc_status = 'pending' ORDER BY created_at ASC`
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+const approveKyc = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE users SET kyc_status = 'verified' WHERE id = $1 AND kyc_status = 'pending' RETURNING *`,
+      [req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'User not found or already verified.' });
+    res.json({ success: true, message: 'User KYC verified.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+const rejectKyc = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE users SET kyc_status = 'rejected' WHERE id = $1 AND kyc_status = 'pending' RETURNING *`,
+      [req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'User not found.' });
+    res.json({ success: true, message: 'User KYC rejected.' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
 // ─── Donations ──────────────────────────────────────────────
 
 const getAllDonations = async (req, res) => {
@@ -235,6 +274,7 @@ const testEmail = async (req, res) => {
 module.exports = {
   getPendingCampaigns, approveCampaign, rejectCampaign,
   getPendingWithdrawals, approveWithdrawal, rejectWithdrawal,
+  getPendingKyc, approveKyc, rejectKyc,
   getAllDonations,
   getPlatformStats,
   getSettings, updateSetting, getStripeStatus, testEmail
