@@ -59,17 +59,55 @@ export default function CampaignPage() {
               by {campaign.creator_name} · Created {timeAgo(campaign.created_at)}
             </p>
 
-            {/* Progress */}
-            <div className="progress-track" style={{ height: '12px', marginBottom: '8px' }}>
-              <div className="progress-fill" style={{ width: `${progress}%` }} />
-            </div>
-            <div className="campaign-stats-row">
-              <span style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--emerald-600)' }}>
-                ${Number(campaign.current_amount).toLocaleString()}
-              </span>
-              <span style={{ color: 'var(--text-muted)' }}>
-                raised of ${Number(campaign.goal_amount).toLocaleString()} goal ({progress}%)
-              </span>
+            {/* Circular Progress & CTA Block */}
+            <div style={{ margin: '24px 0', padding: '0', background: 'transparent' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '20px' }}>
+                {/* Circular Progress */}
+                <div style={{ position: 'relative', width: '64px', height: '64px', flexShrink: 0 }}>
+                  <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)' }}>
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#e2e8f0" strokeWidth="4" />
+                    <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#4ade80" strokeWidth="4" strokeDasharray={`${progress}, 100`} strokeLinecap="round" />
+                  </svg>
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>
+                    {Math.round(progress)}%
+                  </div>
+                </div>
+                
+                <div>
+                  <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                    ${Number(campaign.current_amount).toLocaleString()} <span style={{ fontSize: '1rem', fontWeight: 600 }}>raised</span>
+                  </div>
+                  <div style={{ color: '#64748b', fontSize: '1rem', fontWeight: 500, marginBottom: '8px' }}>
+                    of ${Number(campaign.goal_amount).toLocaleString()} USD
+                  </div>
+                  {donors.length > 0 && (
+                    <div 
+                      onClick={() => setTab('donors')}
+                      style={{ fontSize: '0.9rem', color: '#334155', cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
+                    >
+                      {donors[0].donor_name || 'Anonymous'} donated ${Number(donors[0].amount).toLocaleString()} <span style={{ color: '#94a3b8', marginLeft: '4px' }}>›</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button 
+                  onClick={() => document.querySelector('.checkout-container')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                  style={{ flex: 1, padding: '16px', borderRadius: '30px', border: 'none', background: '#bbf7d0', color: '#166534', fontWeight: 700, fontSize: '1.05rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                  Donate
+                </button>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(window.location.href);
+                    alert('Campaign link copied to clipboard!');
+                  }}
+                  style={{ flex: 1, padding: '16px', borderRadius: '30px', border: 'none', background: '#166534', color: '#ffffff', fontWeight: 700, fontSize: '1.05rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                  Share
+                </button>
+              </div>
             </div>
 
             {/* Tabs */}
@@ -120,7 +158,9 @@ export default function CampaignPage() {
           </div>
 
           {/* Right: Sticky Donation Box */}
-          <GuestCheckoutForm campaignId={campaign.id} campaignTitle={campaign.title} />
+          <div className="checkout-container">
+            <GuestCheckoutForm campaignId={campaign.id} campaignTitle={campaign.title} />
+          </div>
         </div>
       </div>
     </div>
