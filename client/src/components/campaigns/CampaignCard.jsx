@@ -7,17 +7,19 @@ export default function CampaignCard({ campaign }) {
 
   return (
     <div className="card animate-in" id={`campaign-card-${campaign.id}`}>
-      <div style={{
-        height: '200px',
-        background: campaign.cover_image_url
-          ? `url(${campaign.cover_image_url}) center/cover`
-          : 'linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%)',
-        display: 'flex',
-        alignItems: 'flex-end',
-        padding: '16px'
-      }}>
-        <span className="badge badge-accent">{campaign.category || 'general'}</span>
-      </div>
+      <Link to={`/campaigns/${campaign.id}`} style={{ display: 'block', textDecoration: 'none' }}>
+        <div style={{
+          height: '200px',
+          background: campaign.cover_image_url
+            ? `url(${campaign.cover_image_url}) center/cover`
+            : 'linear-gradient(135deg, #F1F5F9 0%, #E2E8F0 100%)',
+          display: 'flex',
+          alignItems: 'flex-end',
+          padding: '16px'
+        }}>
+          <span className="badge badge-accent">{campaign.category || 'general'}</span>
+        </div>
+      </Link>
 
       <div className="card-body">
         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', marginBottom: '8px', lineHeight: 1.3 }}>

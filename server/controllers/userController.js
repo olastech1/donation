@@ -21,10 +21,9 @@ const submitKyc = async (req, res) => {
       return res.status(400).json({ success: false, message: 'The uploaded document is invalid or unreadable. Please upload a clear photo or PDF.' });
     }
 
-    // Simulate Automatic Document Verification
-    // In a real production system, this would integrate with Stripe Identity, Onfido, etc.
-    let newStatus = 'verified';
-    let message = 'Document automatically verified by system. KYC Approved!';
+    // Document is valid format. Set to pending for manual admin review.
+    let newStatus = 'pending';
+    let message = 'KYC document submitted successfully. Awaiting admin review.';
     
     const result = await pool.query(
       `UPDATE users 

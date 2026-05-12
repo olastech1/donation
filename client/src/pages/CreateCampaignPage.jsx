@@ -67,7 +67,7 @@ export default function CreateCampaignPage() {
         <div className="animate-in">
           <div className="form-group">
             <label className="form-label">Campaign Title *</label>
-            <input type="text" className="form-input" placeholder="e.g., Help Build a School in Lagos" value={form.title} onChange={e => update('title', e.target.value)} maxLength={150} />
+            <input type="text" className="form-input" value={form.title} onChange={e => update('title', e.target.value)} maxLength={150} />
           </div>
           <div className="form-group">
             <label className="form-label">Category *</label>
