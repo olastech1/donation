@@ -82,6 +82,20 @@ const getPendingCampaigns = async (req, res) => {
   }
 };
 
+const getAllCampaigns = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT c.*, u.name AS creator_name, u.email AS creator_email, u.kyc_status
+       FROM campaigns c JOIN users u ON c.creator_id = u.id
+       ORDER BY c.created_at DESC`
+    );
+    res.json({ success: true, data: result.rows });
+  } catch (err) {
+    console.error('All campaigns error:', err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
 const approveCampaign = async (req, res) => {
   try {
     const result = await pool.query(
@@ -116,6 +130,21 @@ const rejectCampaign = async (req, res) => {
 
     res.json({ success: true, message: 'Campaign rejected.', data: { campaign: result.rows[0], reason: req.body.reason } });
   } catch (err) {
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+const deleteCampaign = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `DELETE FROM campaigns WHERE id = $1 RETURNING id`,
+      [req.params.id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Campaign not found.' });
+    
+    res.json({ success: true, message: 'Campaign deleted successfully.' });
+  } catch (err) {
+    console.error('Delete campaign error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 };
@@ -337,7 +366,7 @@ const testEmail = async (req, res) => {
 
 module.exports = {
   getAllUsers, updateUser, deleteUser,
-  getPendingCampaigns, approveCampaign, rejectCampaign,
+  getPendingCampaigns, getAllCampaigns, approveCampaign, rejectCampaign, deleteCampaign,
   getPendingWithdrawals, approveWithdrawal, rejectWithdrawal,
   getAllKyc, approveKyc, rejectKyc,
   getAllDonations,

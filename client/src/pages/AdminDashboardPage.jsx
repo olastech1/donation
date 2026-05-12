@@ -6,7 +6,7 @@ import { adminAPI } from '../services/api';
 const TABS = [
   { key: 'overview', label: '📊 Overview', icon: '📊' },
   { key: 'users', label: '👥 Manage Users', icon: '👥' },
-  { key: 'campaigns', label: '📋 Pending Campaigns', icon: '📋' },
+  { key: 'campaigns', label: '📋 Manage Campaigns', icon: '📋' },
   { key: 'kyc', label: '🛡️ KYC Reviews', icon: '🛡️' },
   { key: 'withdrawals', label: '💸 Withdrawals', icon: '💸' },
   { key: 'donations', label: '💳 All Donations', icon: '💳' },
@@ -45,7 +45,7 @@ export default function AdminDashboardPage() {
           const res = await adminAPI.getStats();
           setStats(res.data.data);
         } else if (tab === 'campaigns') {
-          const res = await adminAPI.getPending();
+          const res = await adminAPI.getAllCampaigns();
           setPending(res.data.data);
         } else if (tab === 'withdrawals') {
           const res = await adminAPI.getPendingWithdrawals();
@@ -77,10 +77,24 @@ export default function AdminDashboardPage() {
     try {
       if (action === 'approve') await adminAPI.approve(id);
       else await adminAPI.reject(id, 'Does not meet guidelines.');
-      setPending(prev => prev.filter(c => c.id !== id));
+      setPending(prev => prev.map(c => c.id === id ? { ...c, status: action === 'approve' ? 'active' : 'rejected' } : c));
       setMessage({ type: 'success', text: `Campaign ${action}d successfully.` });
     } catch (err) {
       setMessage({ type: 'error', text: `Failed to ${action} campaign.` });
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  const handleDeleteCampaign = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this campaign? This action cannot be undone and will delete associated donations and updates.')) return;
+    setActionLoading(`del-${id}`);
+    try {
+      await adminAPI.deleteCampaign(id);
+      setPending(prev => prev.filter(c => c.id !== id));
+      setMessage({ type: 'success', text: 'Campaign deleted successfully.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to delete campaign.' });
     } finally {
       setActionLoading('');
     }
@@ -249,7 +263,7 @@ export default function AdminDashboardPage() {
                       <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: '16px', color: 'var(--slate-800)' }}>Quick Actions</h3>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                         <button className="btn btn-secondary btn-block" onClick={() => setTab('campaigns')}>
-                          📋 Review Pending Campaigns ({stats.campaigns?.pending || 0})
+                          📋 Manage Campaigns ({stats.campaigns?.total || 0})
                         </button>
                         <button className="btn btn-secondary btn-block" onClick={() => setTab('kyc')}>
                           🛡️ Review Pending KYC
@@ -267,15 +281,15 @@ export default function AdminDashboardPage() {
               </div>
             )}
 
-            {/* ── Pending Campaigns Tab ── */}
+            {/* ── Manage Campaigns Tab ── */}
             {tab === 'campaigns' && (
               <div className="animate-in">
                 {pending.length === 0 ? (
                   <div className="card" style={{ textAlign: 'center' }}>
                     <div className="card-body" style={{ padding: '60px 20px' }}>
-                      <div style={{ fontSize: '3rem', marginBottom: '16px' }}>✅</div>
-                      <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--slate-800)' }}>All caught up!</h3>
-                      <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>No campaigns pending review.</p>
+                      <div style={{ fontSize: '3rem', marginBottom: '16px' }}>📋</div>
+                      <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--slate-800)' }}>No campaigns</h3>
+                      <p style={{ color: 'var(--text-muted)', marginTop: '8px' }}>There are no campaigns on the platform yet.</p>
                     </div>
                   </div>
                 ) : (
@@ -286,7 +300,9 @@ export default function AdminDashboardPage() {
                           <div style={{ flex: 1, minWidth: '250px' }}>
                             <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
                               <span className="badge badge-category">{c.category}</span>
-                              <span className="badge badge-warning">Pending</span>
+                              <span className={`badge ${c.status === 'active' ? 'badge-success' : c.status === 'pending' ? 'badge-warning' : 'badge-danger'}`}>
+                                {c.status}
+                              </span>
                               <span className={`badge ${c.kyc_status === 'verified' ? 'badge-success' : 'badge-danger'}`}>
                                 KYC: {c.kyc_status}
                               </span>
@@ -299,23 +315,35 @@ export default function AdminDashboardPage() {
                               {c.description}
                             </p>
                             <p style={{ color: 'var(--emerald-600)', fontWeight: 700, marginTop: '8px' }}>
-                              Goal: ${Number(c.goal_amount).toLocaleString()}
+                              Raised: ${Number(c.current_amount).toLocaleString()} / Goal: ${Number(c.goal_amount).toLocaleString()}
                             </p>
                           </div>
                           <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                            {c.status === 'pending' && (
+                              <>
+                                <button
+                                  className="btn btn-success btn-sm"
+                                  onClick={() => handleCampaignAction(c.id, 'approve')}
+                                  disabled={actionLoading === c.id}
+                                >
+                                  {actionLoading === c.id ? '...' : '✅ Approve'}
+                                </button>
+                                <button
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => handleCampaignAction(c.id, 'reject')}
+                                  disabled={actionLoading === c.id}
+                                >
+                                  {actionLoading === c.id ? '...' : '❌ Reject'}
+                                </button>
+                              </>
+                            )}
                             <button
-                              className="btn btn-success btn-sm"
-                              onClick={() => handleCampaignAction(c.id, 'approve')}
-                              disabled={actionLoading === c.id}
+                              className="btn btn-secondary btn-sm"
+                              style={{ background: '#ef4444', color: 'white' }}
+                              onClick={() => handleDeleteCampaign(c.id)}
+                              disabled={actionLoading === `del-${c.id}`}
                             >
-                              {actionLoading === c.id ? '...' : '✅ Approve'}
-                            </button>
-                            <button
-                              className="btn btn-danger btn-sm"
-                              onClick={() => handleCampaignAction(c.id, 'reject')}
-                              disabled={actionLoading === c.id}
-                            >
-                              {actionLoading === c.id ? '...' : '❌ Reject'}
+                              {actionLoading === `del-${c.id}` ? '...' : '🗑️ Delete'}
                             </button>
                           </div>
                         </div>
