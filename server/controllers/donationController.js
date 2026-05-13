@@ -291,7 +291,7 @@ const donationCallback = async (req, res) => {
 const getRecentDonations = async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT d.id, d.amount, d.created_at, c.title AS campaign_title,
+      `SELECT d.id, d.amount, d.created_at, c.title AS campaign_title, c.status AS campaign_status,
               CASE
                 WHEN d.is_anonymous THEN 'Anonymous'
                 WHEN d.user_id IS NOT NULL THEN u.name

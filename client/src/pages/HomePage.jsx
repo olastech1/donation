@@ -138,7 +138,7 @@ export default function HomePage() {
                   </div>
                   <div>
                     <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{d.donor_name || 'Anonymous'}</div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>donated to <span style={{ color: 'var(--slate-800)', fontWeight: 500 }}>{d.campaign_title}</span></div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>donated to <span style={{ color: 'var(--slate-800)', fontWeight: 500 }}>{d.campaign_status === 'active' ? d.campaign_title : 'a private campaign'}</span></div>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right' }}>
