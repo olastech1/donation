@@ -366,9 +366,20 @@ export default function AdminDashboardPage() {
                                 onClick={() => handleToggleCampaign(c.id, c.status)}
                                 disabled={actionLoading === `tog-${c.id}`}
                               >
-                                {actionLoading === `tog-${c.id}` ? '...' : c.status === 'active' ? '⏸️ Pause' : '▶️ Activate'}
+                                {actionLoading === `tog-${c.id}` ? '...' : c.status === 'active' ? '⏸️ Hide from Home' : '▶️ Show on Home'}
                               </button>
                             )}
+                            <button
+                              className="btn btn-sm"
+                              style={{ background: '#e2e8f0', color: '#475569' }}
+                              onClick={() => {
+                                const url = `${window.location.origin}/campaigns/${c.id}`;
+                                navigator.clipboard.writeText(url);
+                                alert('Campaign link copied to clipboard!');
+                              }}
+                            >
+                              🔗 Copy Link
+                            </button>
                             <button
                               className="btn btn-secondary btn-sm"
                               style={{ background: '#ef4444', color: 'white' }}
