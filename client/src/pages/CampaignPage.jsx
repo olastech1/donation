@@ -24,22 +24,8 @@ export default function CampaignPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <div className="page"><div className="spinner" /></div>;
-  if (!campaign) return <div className="page container"><h2>Campaign not found</h2></div>;
-
-  const progress = campaign.goal_amount > 0
-    ? Math.min(100, (campaign.current_amount / campaign.goal_amount) * 100).toFixed(1)
-    : 0;
-
-  const timeAgo = (date) => {
-    const diff = Date.now() - new Date(date).getTime();
-    const days = Math.floor(diff / 86400000);
-    if (days > 0) return `${days}d ago`;
-    const hours = Math.floor(diff / 3600000);
-    return hours > 0 ? `${hours}h ago` : 'Just now';
-  };
-
   // Inject / remove noindex meta tag based on seo_visible
+  // (must be here, before any conditional returns, to follow Rules of Hooks)
   useEffect(() => {
     if (!campaign) return;
     const existingTag = document.querySelector('meta[name="robots"][data-campaign]');
@@ -56,6 +42,21 @@ export default function CampaignPage() {
     }
     return () => document.querySelector('meta[name="robots"][data-campaign]')?.remove();
   }, [campaign]);
+
+  if (loading) return <div className="page"><div className="spinner" /></div>;
+  if (!campaign) return <div className="page container"><h2>Campaign not found</h2></div>;
+
+  const progress = campaign.goal_amount > 0
+    ? Math.min(100, (campaign.current_amount / campaign.goal_amount) * 100).toFixed(1)
+    : 0;
+
+  const timeAgo = (date) => {
+    const diff = Date.now() - new Date(date).getTime();
+    const days = Math.floor(diff / 86400000);
+    if (days > 0) return `${days}d ago`;
+    const hours = Math.floor(diff / 3600000);
+    return hours > 0 ? `${hours}h ago` : 'Just now';
+  };
 
   return (
     <div className="campaign-detail">
