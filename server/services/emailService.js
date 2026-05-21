@@ -91,17 +91,31 @@ const sendEmail = async (to, subject, htmlContent, previewText = '') => {
 
 module.exports = {
   // 1. Auth Emails
-  sendWelcomeEmail: (email, name) => 
+  sendEmailVerificationEmail: (email, name, verifyUrl) =>
     sendEmail(
-      email, 
-      'Welcome to Donate Plea!', 
+      email,
+      'Verify your email address — Donate Plea',
+      `
+        <h3 style="color: #0f172a; font-size: 20px; margin-top: 0; margin-bottom: 16px;">Almost there, ${name}! 🎉</h3>
+        <p style="margin: 0 0 16px;">Thanks for signing up for Donate Plea. Before you can log in, we need to confirm your email address.</p>
+        <p style="margin: 0 0 16px;">Click the button below to verify your email. This link expires in <strong>24 hours</strong>.</p>
+        ${getButtonHtml(verifyUrl, '✅ Verify My Email Address')}
+        <p style="margin-top: 32px; font-size: 13px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 16px;">If you did not create an account, you can safely ignore this email.</p>
+      `,
+      'Confirm your email to activate your Donate Plea account.'
+    ),
+
+  sendWelcomeEmail: (email, name) =>
+    sendEmail(
+      email,
+      'Welcome to Donate Plea!',
       `
         <h3 style="color: #0f172a; font-size: 20px; margin-top: 0; margin-bottom: 16px;">Welcome, ${name}!</h3>
-        <p style="margin: 0 0 16px;">Thank you for joining Donate Plea. Your account has been created successfully, and you are officially part of our community.</p>
-        <p style="margin: 0 0 16px;">You can now start creating your own campaigns to make a real difference, or support causes that matter to you.</p>
+        <p style="margin: 0 0 16px;">Your email has been verified and your Donate Plea account is now fully active.</p>
+        <p style="margin: 0 0 16px;">You can now create campaigns and start raising funds for causes that matter to you.</p>
         ${getButtonHtml(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`, 'Go to Dashboard')}
       `,
-      'Your account has been created successfully.'
+      'Your account has been verified and is ready to use.'
     ),
 
   // 2. Campaign Emails

@@ -26,11 +26,17 @@ export function AuthProvider({ children }) {
     return res.data;
   };
 
+  // Register no longer returns a token — user must verify email first.
+  // Returns the response data which includes { email } so the page can show a "check your email" screen.
   const register = async (name, email, password) => {
     const res = await authAPI.register({ name, email, password });
-    localStorage.setItem('dp_token', res.data.data.token);
-    setUser(res.data.data.user);
     return res.data;
+  };
+
+  // Called after email link is clicked — logs the user in with the returned JWT.
+  const loginWithToken = (userData, token) => {
+    localStorage.setItem('dp_token', token);
+    setUser(userData);
   };
 
   const logout = () => {
@@ -39,7 +45,7 @@ export function AuthProvider({ children }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, loginWithToken, logout }}>
       {children}
     </AuthContext.Provider>
   );
