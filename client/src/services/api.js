@@ -25,6 +25,17 @@ export const authAPI = {
   resetPassword: (data) => api.post('/auth/reset-password', data),
 };
 
+// --- Upload ---
+export const uploadAPI = {
+  image: (file) => {
+    const formData = new FormData();
+    formData.append('image', file);
+    return api.post('/upload/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  }
+};
+
 // --- Campaigns ---
 export const campaignAPI = {
   list: (params) => api.get('/campaigns', { params }),
