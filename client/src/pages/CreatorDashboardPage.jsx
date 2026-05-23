@@ -31,7 +31,7 @@ export default function CreatorDashboardPage() {
   // Withdrawal Form State
   const [showWithdrawForm, setShowWithdrawForm] = useState(false);
   const [withdrawForm, setWithdrawForm] = useState({
-    campaign_id: '', amount: '', bank_name: '', account_number: '', account_name: ''
+    campaign_id: '', amount: '', payout_method: 'bank', bank_name: '', account_number: '', account_name: '', crypto_network: 'USDT (TRC20)', crypto_address: ''
   });
 
   // KYC Form State
@@ -112,7 +112,7 @@ export default function CreatorDashboardPage() {
       await withdrawalAPI.request(withdrawForm);
       setMessage({ type: 'success', text: 'Withdrawal requested successfully.' });
       setShowWithdrawForm(false);
-      setWithdrawForm({ campaign_id: '', amount: '', bank_name: '', account_number: '', account_name: '' });
+      setWithdrawForm({ campaign_id: '', amount: '', payout_method: 'bank', bank_name: '', account_number: '', account_name: '', crypto_network: 'USDT (TRC20)', crypto_address: '' });
       // Refresh list
       const res = await withdrawalAPI.getMyWithdrawals();
       setWithdrawals(res.data.data);
@@ -137,6 +137,21 @@ export default function CreatorDashboardPage() {
     } finally {
       setUpdateLoading(false);
     }
+  };
+
+  const totalAvailable = campaigns.reduce((acc, c) => acc + parseFloat(c.available_balance || 0), 0);
+  const totalPending = campaigns.reduce((acc, c) => acc + parseFloat(c.pending_balance || 0), 0);
+
+  const getNextPayoutDateStr = () => {
+    const now = new Date();
+    let targetMonth = now.getMonth() + 1; // next month
+    let targetYear = now.getFullYear();
+    if (now.getDate() < 15) {
+      // Releases on 15th of CURRENT month
+      targetMonth = now.getMonth();
+    }
+    const nextDate = new Date(targetYear, targetMonth, 15);
+    return nextDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
   if (authLoading || !user) return <div className="page"><div className="spinner" /></div>;
@@ -287,6 +302,52 @@ export default function CreatorDashboardPage() {
                   )}
                 </div>
 
+                {/* Balance Cards Summary */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                  gap: '20px',
+                  marginBottom: '28px'
+                }}>
+                  {/* Available Balance Card */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, #059669, #10b981)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '20px 24px',
+                    color: '#fff',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                  }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Available to Withdraw
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, margin: '6px 0', fontFamily: 'var(--font-display)' }}>
+                      ${totalAvailable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.95, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span>🟢 Available & ready for payout</span>
+                    </div>
+                  </div>
+
+                  {/* Pending Balance Card */}
+                  <div style={{
+                    background: 'linear-gradient(135deg, #4f46e5, #6366f1)',
+                    borderRadius: 'var(--radius-md)',
+                    padding: '20px 24px',
+                    color: '#fff',
+                    boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)'
+                  }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, opacity: 0.9, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                      Pending Balance
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, margin: '6px 0', fontFamily: 'var(--font-display)' }}>
+                      ${totalPending.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </div>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.95 }}>
+                      📅 Next Release: <strong>{getNextPayoutDateStr()}</strong>
+                    </div>
+                  </div>
+                </div>
+
                 {/* KYC Gate — shown when not verified */}
                 {userData && userData.kyc_status !== 'verified' && (
                   <div style={{
@@ -335,27 +396,58 @@ export default function CreatorDashboardPage() {
                           <select className="form-input" required value={withdrawForm.campaign_id} onChange={e => setWithdrawForm({...withdrawForm, campaign_id: e.target.value})}>
                             <option value="">-- Choose Campaign --</option>
                             {campaigns.map(c => (
-                              <option key={c.id} value={c.id}>{c.title} (Available: ${Number(c.current_amount).toLocaleString()})</option>
+                              <option key={c.id} value={c.id}>{c.title} (Available: ${Number(c.available_balance).toLocaleString()}, Pending: ${Number(c.pending_balance).toLocaleString()})</option>
                             ))}
                           </select>
                         </div>
                         <div className="form-group">
-                          <label className="form-label">Amount ($)</label>
-                          <input type="number" className="form-input" required min="1" step="0.01" value={withdrawForm.amount} onChange={e => setWithdrawForm({...withdrawForm, amount: e.target.value})} />
+                          <label className="form-label">Amount ($) <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>(Min. $50)</span></label>
+                          <input type="number" className="form-input" required min="50" step="0.01" value={withdrawForm.amount} onChange={e => setWithdrawForm({...withdrawForm, amount: e.target.value})} />
                         </div>
+                        
                         <div className="form-group">
-                          <label className="form-label">Bank Name</label>
-                          <input type="text" className="form-input" required value={withdrawForm.bank_name} onChange={e => setWithdrawForm({...withdrawForm, bank_name: e.target.value})} />
+                          <label className="form-label">Payout Method</label>
+                          <select className="form-input" required value={withdrawForm.payout_method} onChange={e => setWithdrawForm({...withdrawForm, payout_method: e.target.value})}>
+                            <option value="bank">Bank Transfer</option>
+                            <option value="crypto">Cryptocurrency (Bitcoin / Stablecoins)</option>
+                          </select>
                         </div>
-                        <div className="form-group">
-                          <label className="form-label">Account Number</label>
-                          <input type="text" className="form-input" required value={withdrawForm.account_number} onChange={e => setWithdrawForm({...withdrawForm, account_number: e.target.value})} />
-                        </div>
-                        <div className="form-group">
-                          <label className="form-label">Account Name</label>
-                          <input type="text" className="form-input" required value={withdrawForm.account_name} onChange={e => setWithdrawForm({...withdrawForm, account_name: e.target.value})} />
-                        </div>
-                        <div style={{ display: 'flex', gap: '8px' }}>
+
+                        {withdrawForm.payout_method === 'bank' ? (
+                          <>
+                            <div className="form-group">
+                              <label className="form-label">Bank Name</label>
+                              <input type="text" className="form-input" required value={withdrawForm.bank_name} onChange={e => setWithdrawForm({...withdrawForm, bank_name: e.target.value})} />
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Account Number</label>
+                              <input type="text" className="form-input" required value={withdrawForm.account_number} onChange={e => setWithdrawForm({...withdrawForm, account_number: e.target.value})} />
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Account Name</label>
+                              <input type="text" className="form-input" required value={withdrawForm.account_name} onChange={e => setWithdrawForm({...withdrawForm, account_name: e.target.value})} />
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="form-group">
+                              <label className="form-label">Crypto Network</label>
+                              <select className="form-input" required value={withdrawForm.crypto_network} onChange={e => setWithdrawForm({...withdrawForm, crypto_network: e.target.value})}>
+                                <option value="USDT (TRC20)">USDT (TRC20) - Recommended (Low Fee)</option>
+                                <option value="USDT (ERC20)">USDT (ERC20)</option>
+                                <option value="Ethereum (ERC20)">Ethereum (ERC20)</option>
+                                <option value="Bitcoin (BTC)">Bitcoin (BTC)</option>
+                              </select>
+                            </div>
+                            <div className="form-group">
+                              <label className="form-label">Wallet Address</label>
+                              <input type="text" className="form-input" required placeholder="Enter public wallet address" value={withdrawForm.crypto_address} onChange={e => setWithdrawForm({...withdrawForm, crypto_address: e.target.value})} />
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>⚠️ Double check your wallet address. Crypto transactions are completely irreversible.</span>
+                            </div>
+                          </>
+                        )}
+
+                        <div style={{ display: 'flex', gap: '8px', marginTop: '20px' }}>
                           <button type="submit" className="btn btn-success">Submit Request</button>
                           <button type="button" className="btn btn-secondary" onClick={() => setShowWithdrawForm(false)}>Cancel</button>
                         </div>
@@ -373,6 +465,7 @@ export default function CreatorDashboardPage() {
                         <tr style={{ background: 'var(--bg-secondary)', borderBottom: '2px solid var(--border)' }}>
                           <th style={{ padding: '12px 16px', fontWeight: 600 }}>Date</th>
                           <th style={{ padding: '12px 16px', fontWeight: 600 }}>Campaign</th>
+                          <th style={{ padding: '12px 16px', fontWeight: 600 }}>Payout Method & Details</th>
                           <th style={{ padding: '12px 16px', fontWeight: 600 }}>Amount</th>
                           <th style={{ padding: '12px 16px', fontWeight: 600 }}>Status</th>
                         </tr>
@@ -384,6 +477,19 @@ export default function CreatorDashboardPage() {
                               {new Date(w.created_at).toLocaleDateString()}
                             </td>
                             <td style={{ padding: '12px 16px', fontWeight: 500 }}>{w.campaign_title}</td>
+                            <td style={{ padding: '12px 16px', fontSize: '0.85rem' }}>
+                              {w.payout_method === 'crypto' ? (
+                                <div>
+                                  <span className="badge badge-category" style={{ background: '#e0f2fe', color: '#0369a1', marginRight: '6px' }}>🪙 Crypto ({w.crypto_network})</span>
+                                  <code style={{ fontSize: '0.8rem', color: 'var(--slate-800)' }}>{w.crypto_address ? `${w.crypto_address.slice(0, 8)}...${w.crypto_address.slice(-6)}` : ''}</code>
+                                </div>
+                              ) : (
+                                <div>
+                                  <span className="badge badge-category" style={{ background: '#f1f5f9', color: '#475569', marginRight: '6px' }}>🏦 Bank</span>
+                                  <span style={{ color: 'var(--text-muted)' }}>{w.bank_name} • {w.account_number}</span>
+                                </div>
+                              )}
+                            </td>
                             <td style={{ padding: '12px 16px', color: 'var(--emerald-600)', fontWeight: 700 }}>${Number(w.amount).toLocaleString()}</td>
                             <td style={{ padding: '12px 16px' }}>
                               <span className={`badge ${w.status === 'approved' ? 'badge-success' : w.status === 'pending' ? 'badge-warning' : 'badge-danger'}`}>

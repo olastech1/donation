@@ -536,7 +536,19 @@ export default function AdminDashboardPage() {
                             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--slate-800)' }}>{w.campaign_title}</h3>
                             <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>Requested by {w.creator_name}</p>
                             <p style={{ color: 'var(--emerald-600)', fontWeight: 700, fontSize: '1.2rem', marginTop: '8px' }}>${Number(w.amount).toLocaleString()}</p>
-                            {w.bank_name && <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{w.bank_name} • {w.account_number}</p>}
+                            {w.payout_method === 'crypto' ? (
+                              <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>
+                                <span className="badge badge-category" style={{ background: '#e0f2fe', color: '#0369a1', marginRight: '6px' }}>🪙 Crypto ({w.crypto_network})</span>
+                                <code style={{ fontSize: '0.9rem', color: 'var(--slate-800)', background: '#f8fafc', padding: '2px 6px', borderRadius: '4px' }}>{w.crypto_address}</code>
+                              </p>
+                            ) : (
+                              w.bank_name && (
+                                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '4px' }}>
+                                  <span className="badge badge-category" style={{ background: '#f1f5f9', color: '#475569', marginRight: '6px' }}>🏦 Bank</span>
+                                  {w.bank_name} • {w.account_number} ({w.account_name})
+                                </p>
+                              )
+                            )}
                           </div>
                           <div style={{ display: 'flex', gap: '8px' }}>
                             <button className="btn btn-success btn-sm" onClick={() => handleWithdrawalAction(w.id, 'approve')} disabled={actionLoading === w.id}>

@@ -271,7 +271,35 @@ const updateCampaign = async (req, res) => {
 const getMyCampaigns = async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT * FROM campaigns WHERE creator_id = $1 ORDER BY created_at DESC`,
+      `SELECT c.*,
+              COALESCE(d_avail.available_raised, 0) AS available_raised,
+              COALESCE(d_pend.pending_raised, 0) AS pending_raised,
+              COALESCE(w.total_withdrawn, 0) AS total_withdrawn,
+              GREATEST(0, COALESCE(d_avail.available_raised, 0) - COALESCE(w.total_withdrawn, 0)) AS available_balance,
+              COALESCE(d_pend.pending_raised, 0) AS pending_balance
+       FROM campaigns c
+       LEFT JOIN (
+         SELECT campaign_id, SUM(amount) AS available_raised
+         FROM donations
+         WHERE status = 'success'
+           AND created_at < (CASE WHEN EXTRACT(DAY FROM NOW()) >= 15 THEN DATE_TRUNC('month', NOW()) ELSE DATE_TRUNC('month', NOW()) - INTERVAL '1 month' END)
+         GROUP BY campaign_id
+       ) d_avail ON c.id = d_avail.campaign_id
+       LEFT JOIN (
+         SELECT campaign_id, SUM(amount) AS pending_raised
+         FROM donations
+         WHERE status = 'success'
+           AND created_at >= (CASE WHEN EXTRACT(DAY FROM NOW()) >= 15 THEN DATE_TRUNC('month', NOW()) ELSE DATE_TRUNC('month', NOW()) - INTERVAL '1 month' END)
+         GROUP BY campaign_id
+       ) d_pend ON c.id = d_pend.campaign_id
+       LEFT JOIN (
+         SELECT campaign_id, SUM(amount) AS total_withdrawn
+         FROM withdrawals
+         WHERE status IN ('pending', 'approved', 'processed')
+         GROUP BY campaign_id
+       ) w ON c.id = w.campaign_id
+       WHERE c.creator_id = $1
+       ORDER BY c.created_at DESC`,
       [req.user.id]
     );
 

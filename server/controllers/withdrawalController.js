@@ -3,16 +3,42 @@ const emailService = require('../services/emailService');
 
 const requestWithdrawal = async (req, res) => {
   try {
-    const { campaign_id, amount, bank_name, account_number, account_name } = req.body;
+    const { 
+      campaign_id, 
+      amount, 
+      payout_method = 'bank', 
+      bank_name, 
+      account_number, 
+      account_name, 
+      crypto_network, 
+      crypto_address 
+    } = req.body;
     const creatorId = req.user.id;
 
-    if (!campaign_id || !amount || !bank_name || !account_number || !account_name) {
-      return res.status(400).json({ success: false, message: 'All fields are required.' });
+    if (!campaign_id || !amount) {
+      return res.status(400).json({ success: false, message: 'Campaign and amount are required.' });
+    }
+
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount < 50) {
+      return res.status(400).json({ success: false, message: 'Minimum withdrawal amount is $50.' });
+    }
+
+    if (payout_method === 'crypto') {
+      if (!crypto_network || !crypto_address) {
+        return res.status(400).json({ success: false, message: 'Crypto network and wallet address are required.' });
+      }
+    } else if (payout_method === 'bank') {
+      if (!bank_name || !account_number || !account_name) {
+        return res.status(400).json({ success: false, message: 'Bank name, account number, and account name are required.' });
+      }
+    } else {
+      return res.status(400).json({ success: false, message: 'Invalid payout method.' });
     }
 
     // Verify campaign ownership
     const campaignResult = await pool.query(
-      `SELECT id, current_amount, status FROM campaigns WHERE id = $1 AND creator_id = $2`,
+      `SELECT id, title, current_amount, status FROM campaigns WHERE id = $1 AND creator_id = $2`,
       [campaign_id, creatorId]
     );
 
@@ -20,25 +46,43 @@ const requestWithdrawal = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Campaign not found or you are not the creator.' });
     }
 
+    const campaign = campaignResult.rows[0];
+
     // Verify KYC status
     const userResult = await pool.query(`SELECT kyc_status FROM users WHERE id = $1`, [creatorId]);
     if (userResult.rows[0].kyc_status !== 'verified') {
       return res.status(403).json({ success: false, message: 'You must complete KYC verification before requesting a payout.' });
     }
 
-    const campaign = campaignResult.rows[0];
+    // Calculate cutoff date for available donations
+    // (Donations made in the current month or pending window are locked)
+    const now = new Date();
+    let cutoffDate;
+    if (now.getDate() >= 15) {
+      // Cutoff is the start of this month (e.g. May 1st)
+      cutoffDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else {
+      // Cutoff is the start of previous month (e.g. April 1st)
+      cutoffDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    }
 
-    // Check if they have enough balance
-    // In a real app we'd also check pending withdrawals sum
-    const pendingWithdrawalsResult = await pool.query(
-      `SELECT COALESCE(SUM(amount), 0) AS total_pending FROM withdrawals WHERE campaign_id = $1 AND status = 'pending'`,
+    // Sum available donations (successful, created before cutoff)
+    const availableDonationsResult = await pool.query(
+      `SELECT COALESCE(SUM(amount), 0) AS total FROM donations WHERE campaign_id = $1 AND status = 'success' AND created_at < $2`,
+      [campaign_id, cutoffDate]
+    );
+    const availableRaised = parseFloat(availableDonationsResult.rows[0].total);
+
+    // Sum all withdrawals already requested (pending, approved, processed)
+    const withdrawalsResult = await pool.query(
+      `SELECT COALESCE(SUM(amount), 0) AS total FROM withdrawals WHERE campaign_id = $1 AND status IN ('pending', 'approved', 'processed')`,
       [campaign_id]
     );
-    const totalPending = parseFloat(pendingWithdrawalsResult.rows[0].total_pending);
+    const totalWithdrawn = parseFloat(withdrawalsResult.rows[0].total);
 
-    const availableToWithdraw = parseFloat(campaign.current_amount) - totalPending;
+    const availableToWithdraw = Math.max(0, availableRaised - totalWithdrawn);
 
-    if (parseFloat(amount) > availableToWithdraw) {
+    if (parsedAmount > availableToWithdraw) {
       return res.status(400).json({ 
         success: false, 
         message: `Requested amount exceeds available balance. Max available: $${availableToWithdraw.toFixed(2)}` 
@@ -46,14 +90,28 @@ const requestWithdrawal = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO withdrawals (campaign_id, creator_id, amount, bank_name, account_number, account_name)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO withdrawals (
+        campaign_id, creator_id, amount, payout_method,
+        bank_name, account_number, account_name,
+        crypto_network, crypto_address
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [campaign_id, creatorId, amount, bank_name, account_number, account_name]
+      [
+        campaign_id, 
+        creatorId, 
+        parsedAmount, 
+        payout_method,
+        payout_method === 'bank' ? bank_name : null,
+        payout_method === 'bank' ? account_number : null,
+        payout_method === 'bank' ? account_name : null,
+        payout_method === 'crypto' ? crypto_network : null,
+        payout_method === 'crypto' ? crypto_address : null
+      ]
     );
 
     // Send email to creator
-    emailService.sendWithdrawalRequestEmail(req.user.email, amount, campaign.title);
+    emailService.sendWithdrawalRequestEmail(req.user.email, parsedAmount, campaign.title);
 
     res.status(201).json({
       success: true,
