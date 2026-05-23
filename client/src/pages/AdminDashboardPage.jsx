@@ -642,7 +642,15 @@ export default function AdminDashboardPage() {
                               </button>
                             </div>
                           )}
-                   {/* ── Withdrawals Tab ── */}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {/* ── Withdrawals Tab ── */}
             {tab === 'withdrawals' && (
               <div className="animate-in">
                 {withdrawals.length === 0 ? (
@@ -717,6 +725,7 @@ export default function AdminDashboardPage() {
                   ))
                 )}
               </div>
+            )}
 
             {/* ── Users Tab ── */}
             {tab === 'users' && (
