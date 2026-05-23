@@ -253,15 +253,15 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleWithdrawalAction = async (id, action) => {
+  const handleWithdrawalAction = async (id, action, method = 'manual') => {
     setActionLoading(id);
     try {
-      if (action === 'approve') await adminAPI.approveWithdrawal(id);
+      if (action === 'approve') await adminAPI.approveWithdrawal(id, method);
       else await adminAPI.rejectWithdrawal(id);
       setWithdrawals(prev => prev.filter(w => w.id !== id));
       setMessage({ type: 'success', text: `Withdrawal ${action}d.` });
     } catch (err) {
-      setMessage({ type: 'error', text: `Failed to ${action} withdrawal.` });
+      setMessage({ type: 'error', text: err.response?.data?.message || `Failed to ${action} withdrawal.` });
     } finally {
       setActionLoading('');
     }
@@ -675,6 +675,10 @@ export default function AdminDashboardPage() {
                                 <span className="badge badge-category" style={{ background: '#e0f2fe', color: '#0369a1', marginRight: '6px' }}>🪙 Crypto ({w.crypto_network})</span>
                                 <code style={{ fontSize: '0.9rem', color: 'var(--slate-800)', background: '#f8fafc', padding: '2px 6px', borderRadius: '4px' }}>{w.crypto_address}</code>
                               </p>
+                            ) : w.payout_method === 'stripe' ? (
+                              <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '4px' }}>
+                                <span className="badge badge-success" style={{ marginRight: '6px' }}>✅ Stripe Auto-Payout</span>
+                              </p>
                             ) : (
                               w.bank_name && (
                                 <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '4px' }}>
@@ -684,9 +688,14 @@ export default function AdminDashboardPage() {
                               )
                             )}
                           </div>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button className="btn btn-success btn-sm" onClick={() => handleWithdrawalAction(w.id, 'approve')} disabled={actionLoading === w.id}>
-                              ✅ Approve
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            {w.payout_method === 'stripe' && (
+                              <button className="btn btn-sm" style={{ background: '#6366f1', color: '#fff', fontWeight: 600 }} onClick={() => handleWithdrawalAction(w.id, 'approve', 'stripe')} disabled={actionLoading === w.id}>
+                                ⚡ Approve & Disburse via Stripe
+                              </button>
+                            )}
+                            <button className="btn btn-success btn-sm" onClick={() => handleWithdrawalAction(w.id, 'approve', 'manual')} disabled={actionLoading === w.id}>
+                              ✅ Approve (Manual Payment)
                             </button>
                             <button className="btn btn-danger btn-sm" onClick={() => handleWithdrawalAction(w.id, 'reject')} disabled={actionLoading === w.id}>
                               ❌ Reject

@@ -42,6 +42,8 @@ export const userAPI = {
   submitKyc: (data) => api.post('/users/kyc', data),
   createStripeKycSession: () => api.post('/users/kyc/stripe-session'),
   syncStripeKycSession: (sessionId) => api.get(`/users/kyc/stripe-sync?session_id=${sessionId}`),
+  createStripeConnectAccount: () => api.post('/users/stripe/connect'),
+  getStripeConnectStatus: () => api.get('/users/stripe/status'),
 };
 
 // --- Withdrawals ---
@@ -76,7 +78,7 @@ export const adminAPI = {
   deleteCampaign: (id) => api.delete(`/admin/campaigns/${id}`),
   toggleCampaign: (id) => api.put(`/admin/campaigns/${id}/toggle`),
   getPendingWithdrawals: () => api.get('/admin/withdrawals/pending'),
-  approveWithdrawal: (id) => api.put(`/admin/withdrawals/${id}/approve`),
+  approveWithdrawal: (id, method) => api.put(`/admin/withdrawals/${id}/approve`, { method }),
   rejectWithdrawal: (id) => api.put(`/admin/withdrawals/${id}/reject`),
   getAllKyc: () => api.get('/admin/kyc/all'),
   approveKyc: (id) => api.put(`/admin/kyc/${id}/approve`),

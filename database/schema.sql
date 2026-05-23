@@ -25,6 +25,7 @@ CREATE TABLE users (
     kyc_address     TEXT,
     kyc_document_type VARCHAR(50),
     kyc_document_url TEXT,
+    stripe_account_id VARCHAR(255),
     stripe_kyc_session_id VARCHAR(255),
     is_banned       BOOLEAN DEFAULT FALSE,
     ban_type        VARCHAR(20) DEFAULT 'none'

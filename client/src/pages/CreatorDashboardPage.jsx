@@ -33,6 +33,9 @@ export default function CreatorDashboardPage() {
     campaign_id: '', amount: '', payout_method: 'bank', bank_name: '', account_number: '', account_name: '', crypto_network: 'USDT (TRC20)', crypto_address: ''
   });
 
+  // Stripe Connect State
+  const [stripeStatus, setStripeStatus] = useState(null);
+
   // KYC State
   const [kycLoading, setKycLoading] = useState(false);
 
@@ -51,14 +54,16 @@ export default function CreatorDashboardPage() {
           const res = await campaignAPI.getMyCampaigns();
           setCampaigns(res.data.data);
         } else if (tab === 'withdrawals') {
-          const [withRes, campRes, profileRes] = await Promise.all([
+          const [withRes, campRes, profileRes, stripeRes] = await Promise.all([
             withdrawalAPI.getMyWithdrawals(),
             campaignAPI.getMyCampaigns(),
-            userAPI.getMe()
+            userAPI.getMe(),
+            userAPI.getStripeConnectStatus()
           ]);
           setWithdrawals(withRes.data.data);
           setCampaigns(campRes.data.data.filter(c => parseFloat(c.current_amount) > 0));
           setUserData(profileRes.data.data);
+          setStripeStatus(stripeRes.data);
         } else if (tab === 'profile') {
           const res = await userAPI.getMe();
           setUserData(res.data.data);
@@ -86,6 +91,22 @@ export default function CreatorDashboardPage() {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to initialize verification.' });
     } finally {
       setKycLoading(false);
+    }
+  };
+
+  const handleConnectStripe = async () => {
+    try {
+      setLoading(true);
+      const res = await userAPI.createStripeConnectAccount();
+      if (res.data.url) {
+        window.location.href = res.data.url;
+      } else {
+        setMessage({ type: 'error', text: 'Failed to start Stripe Connect session.' });
+      }
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to initialize Stripe connection.' });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -381,6 +402,34 @@ export default function CreatorDashboardPage() {
                   </div>
                 )}
 
+                {/* Stripe Connect Section */}
+                <div className="card" style={{ marginBottom: '24px', background: 'var(--bg-secondary)', border: '1px solid var(--slate-200)' }}>
+                  <div className="card-body" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                    <div>
+                      <h4 style={{ margin: '0 0 4px', color: 'var(--slate-800)', fontFamily: 'var(--font-display)' }}>Stripe Automated Payouts</h4>
+                      <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                        Connect your Stripe account to receive fast, automatic withdrawals directly to your bank.
+                      </p>
+                    </div>
+                    <div>
+                      {stripeStatus === null ? (
+                        <span style={{ fontSize: '0.85rem', color: 'var(--slate-500)' }}>Checking status...</span>
+                      ) : stripeStatus.connected ? (
+                        <span className="badge badge-success" style={{ padding: '8px 12px', fontSize: '0.85rem' }}>✅ Stripe Connected</span>
+                      ) : (
+                        <button 
+                          className="btn btn-sm" 
+                          style={{ background: '#6366f1', color: '#fff', fontWeight: 600 }}
+                          onClick={handleConnectStripe}
+                          disabled={loading}
+                        >
+                          🔗 Connect with Stripe
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {showWithdrawForm && (
                   <div className="card animate-in" style={{ marginBottom: '24px' }}>
                     <div className="card-body">
@@ -403,12 +452,13 @@ export default function CreatorDashboardPage() {
                         <div className="form-group">
                           <label className="form-label">Payout Method</label>
                           <select className="form-input" required value={withdrawForm.payout_method} onChange={e => setWithdrawForm({...withdrawForm, payout_method: e.target.value})}>
-                            <option value="bank">Bank Transfer</option>
-                            <option value="crypto">Cryptocurrency (Bitcoin / Stablecoins)</option>
+                            <option value="bank">Manual Bank Transfer</option>
+                            <option value="crypto">Cryptocurrency</option>
+                            {stripeStatus?.connected && <option value="stripe">Stripe Auto-Payout (Fastest)</option>}
                           </select>
                         </div>
 
-                        {withdrawForm.payout_method === 'bank' ? (
+                        {withdrawForm.payout_method === 'bank' && (
                           <>
                             <div className="form-group">
                               <label className="form-label">Bank Name</label>
@@ -423,7 +473,9 @@ export default function CreatorDashboardPage() {
                               <input type="text" className="form-input" required value={withdrawForm.account_name} onChange={e => setWithdrawForm({...withdrawForm, account_name: e.target.value})} />
                             </div>
                           </>
-                        ) : (
+                        )}
+                        
+                        {withdrawForm.payout_method === 'crypto' && (
                           <>
                             <div className="form-group">
                               <label className="form-label">Crypto Network</label>
@@ -440,6 +492,12 @@ export default function CreatorDashboardPage() {
                               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '4px', display: 'block' }}>⚠️ Double check your wallet address. Crypto transactions are completely irreversible.</span>
                             </div>
                           </>
+                        )}
+                        
+                        {withdrawForm.payout_method === 'stripe' && (
+                          <div style={{ padding: '16px', background: '#e0e7ff', borderRadius: '8px', color: '#3730a3', fontSize: '0.9rem', marginBottom: '16px' }}>
+                            <strong>ℹ️ Note:</strong> Funds will be automatically disbursed to your connected Stripe account upon approval.
+                          </div>
                         )}
 
                         <div style={{ display: 'flex', gap: '8px', marginTop: '20px' }}>

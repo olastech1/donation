@@ -191,5 +191,75 @@ const syncStripeKycSession = async (req, res) => {
     res.status(500).json({ success: false, message: err.message || 'Failed to check verification status.' });
   }
 };
+const createStripeConnectAccount = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+    
+    const dbUser = await pool.query('SELECT stripe_account_id, email FROM users WHERE id = $1', [userId]);
+    if (dbUser.rows.length === 0) return res.status(404).json({ success: false, message: 'User not found.' });
+    
+    let stripeAccountId = dbUser.rows[0].stripe_account_id;
+    const stripeSecretKey = await getStripeSecretKey();
+    const stripe = require('stripe')(stripeSecretKey);
 
-module.exports = { submitKyc, getMe, createStripeKycSession, syncStripeKycSession };
+    // If they don't have a connected account yet, create one
+    if (!stripeAccountId) {
+      const account = await stripe.accounts.create({
+        type: 'express',
+        email: dbUser.rows[0].email,
+        capabilities: {
+          transfers: { requested: true }
+        }
+      });
+      stripeAccountId = account.id;
+      
+      await pool.query('UPDATE users SET stripe_account_id = $1 WHERE id = $2', [stripeAccountId, userId]);
+    }
+
+    const frontendUrl = req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:3000';
+    
+    // Create an account link for onboarding
+    const accountLink = await stripe.accountLinks.create({
+      account: stripeAccountId,
+      refresh_url: `${frontendUrl}/dashboard?tab=withdraw&stripe=refresh`,
+      return_url: `${frontendUrl}/dashboard?tab=withdraw&stripe=return`,
+      type: 'account_onboarding',
+    });
+
+    res.json({ success: true, url: accountLink.url });
+  } catch (err) {
+    console.error('Stripe Connect error:', err);
+    res.status(500).json({ success: false, message: err.message || 'Failed to connect Stripe account.' });
+  }
+};
+
+const getStripeConnectStatus = async (req, res) => {
+  try {
+    const { id: userId } = req.user;
+    
+    const dbUser = await pool.query('SELECT stripe_account_id FROM users WHERE id = $1', [userId]);
+    const stripeAccountId = dbUser.rows[0]?.stripe_account_id;
+    
+    if (!stripeAccountId) {
+      return res.json({ success: true, connected: false });
+    }
+
+    const stripeSecretKey = await getStripeSecretKey();
+    const stripe = require('stripe')(stripeSecretKey);
+
+    const account = await stripe.accounts.retrieve(stripeAccountId);
+    
+    res.json({
+      success: true,
+      connected: true,
+      details_submitted: account.details_submitted,
+      charges_enabled: account.charges_enabled,
+      payouts_enabled: account.payouts_enabled,
+    });
+  } catch (err) {
+    console.error('Get Stripe Status error:', err);
+    res.status(500).json({ success: false, message: 'Failed to retrieve Stripe connection status.' });
+  }
+};
+
+module.exports = { submitKyc, getMe, createStripeKycSession, syncStripeKycSession, createStripeConnectAccount, getStripeConnectStatus };

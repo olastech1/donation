@@ -296,22 +296,60 @@ const getPendingWithdrawals = async (req, res) => {
 
 const approveWithdrawal = async (req, res) => {
   try {
-    const result = await pool.query(
-      `UPDATE withdrawals SET status = 'approved', reviewed_by = $1, reviewed_at = NOW()
-       WHERE id = $2 AND status = 'pending' RETURNING *`,
-      [req.user.id, req.params.id]
+    const { method } = req.body; // 'manual' or 'stripe'
+    
+    // First fetch the withdrawal and user info
+    const wdResult = await pool.query(
+      `SELECT w.*, u.email, u.stripe_account_id 
+       FROM withdrawals w 
+       JOIN users u ON w.creator_id = u.id 
+       WHERE w.id = $1 AND w.status = 'pending'`,
+      [req.params.id]
     );
-    if (result.rows.length === 0) return res.status(404).json({ success: false, message: 'Withdrawal not found.' });
 
-    const wd = result.rows[0];
-    const user = await pool.query('SELECT email FROM users WHERE id = $1', [wd.creator_id]);
-    const camp = await pool.query('SELECT title FROM campaigns WHERE id = $1', [wd.campaign_id]);
-    if (user.rows.length > 0 && camp.rows.length > 0) {
-      await emailService.sendWithdrawalApprovedEmail(user.rows[0].email, wd.amount, camp.rows[0].title);
+    if (wdResult.rows.length === 0) return res.status(404).json({ success: false, message: 'Withdrawal not found or already processed.' });
+    const wd = wdResult.rows[0];
+
+    // If Stripe method, do the transfer first
+    if (method === 'stripe') {
+      if (!wd.stripe_account_id) {
+        return res.status(400).json({ success: false, message: 'Creator does not have a connected Stripe account.' });
+      }
+
+      const { getStripeSecretKey } = require('../config/settings');
+      const stripeSecretKey = await getStripeSecretKey();
+      const stripe = require('stripe')(stripeSecretKey);
+
+      const amountInCents = Math.round(parseFloat(wd.amount) * 100);
+      
+      try {
+        await stripe.transfers.create({
+          amount: amountInCents,
+          currency: 'usd',
+          destination: wd.stripe_account_id,
+          metadata: { withdrawal_id: wd.id, campaign_id: wd.campaign_id }
+        });
+      } catch (stripeErr) {
+        console.error('Stripe Transfer Error:', stripeErr);
+        return res.status(400).json({ success: false, message: 'Stripe transfer failed: ' + stripeErr.message });
+      }
     }
 
-    res.json({ success: true, message: 'Withdrawal approved.', data: result.rows[0] });
+    // Mark as approved in DB
+    const result = await pool.query(
+      `UPDATE withdrawals SET status = 'approved', reviewed_by = $1, reviewed_at = NOW()
+       WHERE id = $2 RETURNING *`,
+      [req.user.id, req.params.id]
+    );
+
+    const camp = await pool.query('SELECT title FROM campaigns WHERE id = $1', [wd.campaign_id]);
+    if (camp.rows.length > 0) {
+      await emailService.sendWithdrawalApprovedEmail(wd.email, wd.amount, camp.rows[0].title);
+    }
+
+    res.json({ success: true, message: 'Withdrawal approved' + (method === 'stripe' ? ' and disbursed via Stripe.' : '.'), data: result.rows[0] });
   } catch (err) {
+    console.error('Approve Withdrawal Error:', err);
     res.status(500).json({ success: false, message: 'Server error.' });
   }
 };
