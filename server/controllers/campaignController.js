@@ -200,7 +200,7 @@ const createCampaign = async (req, res) => {
     );
 
     // Send email notification to creator
-    emailService.sendCampaignPendingEmail(req.user.email, title);
+    await emailService.sendCampaignPendingEmail(req.user.email, title);
 
     res.status(201).json({
       success: true,

@@ -47,8 +47,8 @@ const register = async (req, res) => {
     const frontendUrl = req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:5173';
     const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
-    // Send verification email (async — don't block the response)
-    emailService.sendEmailVerificationEmail(user.email, user.name, verifyUrl);
+    // Send verification email
+    await emailService.sendEmailVerificationEmail(user.email, user.name, verifyUrl);
 
     res.status(201).json({
       success: true,
@@ -99,7 +99,7 @@ const verifyEmail = async (req, res) => {
     );
 
     // Send welcome email now that they're confirmed
-    emailService.sendWelcomeEmail(user.email, user.name);
+    await emailService.sendWelcomeEmail(user.email, user.name);
 
     res.json({
       success: true,
@@ -142,7 +142,7 @@ const resendVerification = async (req, res) => {
 
     const frontendUrl = req.headers.origin || process.env.FRONTEND_URL || 'http://localhost:5173';
     const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
-    emailService.sendEmailVerificationEmail(email.toLowerCase(), user.name, verifyUrl);
+    await emailService.sendEmailVerificationEmail(email.toLowerCase(), user.name, verifyUrl);
 
     res.json({ success: true, message: 'If that email exists and is unverified, a new link has been sent.' });
   } catch (err) {

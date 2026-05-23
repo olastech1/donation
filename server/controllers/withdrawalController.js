@@ -111,7 +111,7 @@ const requestWithdrawal = async (req, res) => {
     );
 
     // Send email to creator
-    emailService.sendWithdrawalRequestEmail(req.user.email, parsedAmount, campaign.title);
+    await emailService.sendWithdrawalRequestEmail(req.user.email, parsedAmount, campaign.title);
 
     res.status(201).json({
       success: true,

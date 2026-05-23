@@ -106,7 +106,7 @@ const approveCampaign = async (req, res) => {
     
     const user = await pool.query('SELECT email FROM users WHERE id = $1', [result.rows[0].creator_id]);
     if (user.rows.length > 0) {
-      emailService.sendCampaignApprovedEmail(user.rows[0].email, result.rows[0].title, result.rows[0].id);
+      await emailService.sendCampaignApprovedEmail(user.rows[0].email, result.rows[0].title, result.rows[0].id);
     }
 
     res.json({ success: true, message: 'Campaign approved.', data: result.rows[0] });
@@ -125,7 +125,7 @@ const rejectCampaign = async (req, res) => {
     
     const user = await pool.query('SELECT email FROM users WHERE id = $1', [result.rows[0].creator_id]);
     if (user.rows.length > 0) {
-      emailService.sendCampaignRejectedEmail(user.rows[0].email, result.rows[0].title);
+      await emailService.sendCampaignRejectedEmail(user.rows[0].email, result.rows[0].title);
     }
 
     res.json({ success: true, message: 'Campaign rejected.', data: { campaign: result.rows[0], reason: req.body.reason } });
@@ -280,7 +280,7 @@ const approveWithdrawal = async (req, res) => {
     const user = await pool.query('SELECT email FROM users WHERE id = $1', [wd.creator_id]);
     const camp = await pool.query('SELECT title FROM campaigns WHERE id = $1', [wd.campaign_id]);
     if (user.rows.length > 0 && camp.rows.length > 0) {
-      emailService.sendWithdrawalApprovedEmail(user.rows[0].email, wd.amount, camp.rows[0].title);
+      await emailService.sendWithdrawalApprovedEmail(user.rows[0].email, wd.amount, camp.rows[0].title);
     }
 
     res.json({ success: true, message: 'Withdrawal approved.', data: result.rows[0] });
@@ -302,7 +302,7 @@ const rejectWithdrawal = async (req, res) => {
     const user = await pool.query('SELECT email FROM users WHERE id = $1', [wd.creator_id]);
     const camp = await pool.query('SELECT title FROM campaigns WHERE id = $1', [wd.campaign_id]);
     if (user.rows.length > 0 && camp.rows.length > 0) {
-      emailService.sendWithdrawalRejectedEmail(user.rows[0].email, wd.amount, camp.rows[0].title);
+      await emailService.sendWithdrawalRejectedEmail(user.rows[0].email, wd.amount, camp.rows[0].title);
     }
 
     res.json({ success: true, message: 'Withdrawal rejected.', data: result.rows[0] });
@@ -455,7 +455,7 @@ const verifyPendingDonations = async (req, res) => {
             const camp = await pool.query('SELECT title FROM campaigns WHERE id = $1', [donation.campaign_id]);
             if (camp.rows.length > 0) {
               const trackingUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/track/${donation.stripe_checkout_session_id}`;
-              emailService.sendDonationReceiptEmail(
+              await emailService.sendDonationReceiptEmail(
                 donorEmail,
                 donation.guest_name || 'Generous Donor',
                 donation.amount,

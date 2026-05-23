@@ -186,7 +186,7 @@ const stripeWebhook = async (req, res) => {
 
         // 1. Receipt to donor
         if (donor_email) {
-          emailService.sendDonationReceiptEmail(donor_email, donorDisplayName, donationAmount, campaignTitle, campaignUrl);
+          await emailService.sendDonationReceiptEmail(donor_email, donorDisplayName, donationAmount, campaignTitle, campaignUrl);
         }
 
         // 2. Alert to campaign creator
@@ -197,7 +197,7 @@ const stripeWebhook = async (req, res) => {
           [campaign_id]
         );
         if (creator.rows.length > 0) {
-          emailService.sendDonationAlertEmail(
+          await emailService.sendDonationAlertEmail(
             creator.rows[0].email,
             creator.rows[0].name,
             donorDisplayName,
