@@ -261,6 +261,17 @@ const deleteDonation = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'Donation not found.' });
     }
+
+    const deletedDonation = result.rows[0];
+
+    // If the donation was successful, we must manually deduct its amount from the campaign
+    if (deletedDonation.status === 'success') {
+      await pool.query(
+        'UPDATE campaigns SET current_amount = current_amount - $1 WHERE id = $2',
+        [deletedDonation.amount, deletedDonation.campaign_id]
+      );
+    }
+
     res.json({ success: true, message: 'Donation deleted successfully.' });
   } catch (err) {
     console.error('Delete donation error:', err);
