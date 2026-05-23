@@ -30,6 +30,7 @@ router.post('/campaigns/:id/add-funds', adminController.addFundsToCampaign);
 // Donations
 router.get('/donations', adminController.getAllDonations);
 router.post('/donations/verify-pending', adminController.verifyPendingDonations);
+router.delete('/donations/:id', adminController.deleteDonation);
 
 // Withdrawal management
 router.get('/withdrawals/pending', adminController.getPendingWithdrawals);

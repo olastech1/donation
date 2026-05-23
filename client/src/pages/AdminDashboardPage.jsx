@@ -34,6 +34,7 @@ export default function AdminDashboardPage() {
   const [banForm, setBanForm] = useState({ ban_type: 'temporary', duration_days: 7, reason: '' });
   const [selectedUserId, setSelectedUserId] = useState('');
   const [selectedUserName, setSelectedUserName] = useState('');
+  const [addFundsModal, setAddFundsModal] = useState({ open: false, userId: '', userName: '', campaigns: [], selectedCampaign: '', amount: '' });
 
   // Guard: only admins
   useEffect(() => {
@@ -157,23 +158,57 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const handleAddUserFunds = async (id, name) => {
-    const amountStr = prompt(`Enter the amount to add to user "${name}"'s balance ($):`);
-    if (amountStr === null || amountStr.trim() === '') return;
-    const amount = parseFloat(amountStr);
-    if (isNaN(amount) || amount <= 0) {
+  const handleOpenAddUserFunds = async (id, name) => {
+    setActionLoading(`user-funds-${id}`);
+    try {
+      // We can check if `pending` (which holds all campaigns) has the user's campaigns
+      let userCampaigns = pending.filter(c => c.creator_id === id && (c.status === 'active' || c.status === 'paused'));
+      if (userCampaigns.length === 0) {
+         // Fallback to fetch from backend just in case
+         const res = await adminAPI.getAllCampaigns();
+         userCampaigns = res.data.data.filter(c => c.creator_id === id && (c.status === 'active' || c.status === 'paused'));
+      }
+      setAddFundsModal({ open: true, userId: id, userName: name, campaigns: userCampaigns, selectedCampaign: '', amount: '' });
+    } catch (err) {
+      setMessage({ type: 'error', text: 'Failed to fetch user campaigns.' });
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  const submitAddUserFunds = async (e) => {
+    e.preventDefault();
+    const { userId, selectedCampaign, amount } = addFundsModal;
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
       alert('Please enter a valid positive number.');
       return;
     }
 
-    setActionLoading(`user-funds-${id}`);
+    setActionLoading(`user-funds-${userId}`);
     try {
-      const res = await adminAPI.addUserFunds(id, amount);
+      // Pass campaign_id if selected, else null (auto-create)
+      const res = await adminAPI.addUserFunds(userId, parsedAmount, selectedCampaign || null);
       setMessage({ type: 'success', text: res.data.message });
+      setAddFundsModal({ open: false, userId: '', userName: '', campaigns: [], selectedCampaign: '', amount: '' });
       const resUsers = await adminAPI.getUsers();
       setUsersList(resUsers.data.data);
     } catch (err) {
       setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to add funds to user.' });
+    } finally {
+      setActionLoading('');
+    }
+  };
+
+  const handleDeleteDonation = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this donation record? This action cannot be undone.')) return;
+    setActionLoading(`del-don-${id}`);
+    try {
+      await adminAPI.deleteDonation(id);
+      setDonations(prev => prev.filter(d => d.id !== id));
+      setMessage({ type: 'success', text: 'Donation deleted successfully.' });
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to delete donation.' });
     } finally {
       setActionLoading('');
     }
@@ -709,7 +744,7 @@ export default function AdminDashboardPage() {
                                   <button
                                     className="btn btn-sm"
                                     style={{ background: '#10b981', color: 'white', border: '1px solid #059669', fontWeight: 700, marginRight: '8px' }}
-                                    onClick={() => handleAddUserFunds(u.id, u.name)}
+                                    onClick={() => handleOpenAddUserFunds(u.id, u.name)}
                                     disabled={actionLoading === `user-funds-${u.id}`}
                                   >
                                     {actionLoading === `user-funds-${u.id}` ? '...' : '💵 Add Funds'}
@@ -842,9 +877,17 @@ export default function AdminDashboardPage() {
                               ${Number(d.amount).toLocaleString()}
                             </td>
                             <td style={{ padding: '12px 16px' }}>
-                              <span className={`badge ${d.status === 'success' ? 'badge-success' : d.status === 'pending' ? 'badge-warning' : 'badge-danger'}`}>
+                              <span className={`badge ${d.status === 'success' ? 'badge-success' : d.status === 'pending' ? 'badge-warning' : 'badge-danger'}`} style={{ marginRight: '8px' }}>
                                 {d.status}
                               </span>
+                              <button 
+                                className="btn btn-secondary btn-sm" 
+                                style={{ background: '#fef2f2', color: '#ef4444', border: '1px solid #fca5a5' }}
+                                onClick={() => handleDeleteDonation(d.id)}
+                                disabled={actionLoading === `del-don-${d.id}`}
+                              >
+                                {actionLoading === `del-don-${d.id}` ? '...' : '🗑️'}
+                              </button>
                             </td>
                           </tr>
                         ))}
@@ -1032,6 +1075,70 @@ export default function AdminDashboardPage() {
                   disabled={actionLoading === `user-ban-${selectedUserId}`}
                 >
                   {actionLoading === `user-ban-${selectedUserId}` ? '⏳ Banning...' : `🚫 Ban ${banForm.ban_type === 'temporary' ? `for ${banForm.duration_days}d` : 'Permanently'}`}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Add Funds Modal ── */}
+      {addFundsModal.open && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15,23,42,0.75)', backdropFilter: 'blur(4px)',
+          zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px'
+        }} onClick={(e) => { if (e.target === e.currentTarget) setAddFundsModal(prev => ({ ...prev, open: false })); }}>
+          <div style={{
+            background: '#fff', borderRadius: '16px', width: '100%', maxWidth: '480px',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)', overflow: 'hidden'
+          }}>
+            <div style={{ background: 'linear-gradient(135deg, #10b981, #059669)', padding: '24px 28px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <h3 style={{ margin: 0, color: '#fff', fontFamily: 'var(--font-display)', fontSize: '1.2rem' }}>💵 Add Funds</h3>
+                <p style={{ margin: '4px 0 0', color: 'rgba(255,255,255,0.85)', fontSize: '0.88rem' }}>
+                  User: <strong>{addFundsModal.userName}</strong>
+                </p>
+              </div>
+              <button onClick={() => setAddFundsModal(prev => ({ ...prev, open: false }))} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '8px', color: '#fff', width: '32px', height: '32px', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>×</button>
+            </div>
+
+            <form onSubmit={submitAddUserFunds} style={{ padding: '28px' }}>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', color: 'var(--slate-700)', marginBottom: '8px' }}>Select Campaign (Optional)</label>
+                <select 
+                  className="form-input" 
+                  value={addFundsModal.selectedCampaign} 
+                  onChange={e => setAddFundsModal(f => ({ ...f, selectedCampaign: e.target.value }))}
+                >
+                  <option value="">-- Create new adjustment campaign --</option>
+                  {addFundsModal.campaigns.map(c => (
+                    <option key={c.id} value={c.id}>{c.title}</option>
+                  ))}
+                </select>
+                <p style={{ margin: '4px 0 0', fontSize: '0.75rem', color: 'var(--text-muted)' }}>If no campaign is selected, the system will automatically create a general balance adjustment campaign for them.</p>
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontWeight: 600, fontSize: '0.9rem', color: 'var(--slate-700)', marginBottom: '8px' }}>Amount (USD)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  className="form-input"
+                  placeholder="e.g. 50.00"
+                  value={addFundsModal.amount}
+                  onChange={e => setAddFundsModal(f => ({ ...f, amount: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button type="button" className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setAddFundsModal(prev => ({ ...prev, open: false }))}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn" style={{ flex: 1, background: 'linear-gradient(135deg, #10b981, #059669)', color: '#fff', border: 'none', fontWeight: 700 }} disabled={actionLoading === `user-funds-${addFundsModal.userId}`}>
+                  {actionLoading === `user-funds-${addFundsModal.userId}` ? '⏳ Adding...' : 'Add Funds'}
                 </button>
               </div>
             </form>

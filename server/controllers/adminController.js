@@ -252,6 +252,22 @@ const getAllDonations = async (req, res) => {
   }
 };
 
+const deleteDonation = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `DELETE FROM donations WHERE id = $1 RETURNING *`,
+      [req.params.id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'Donation not found.' });
+    }
+    res.json({ success: true, message: 'Donation deleted successfully.' });
+  } catch (err) {
+    console.error('Delete donation error:', err);
+    res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
 // ─── Withdrawals ──────────────────────────────────────────
 
 const getPendingWithdrawals = async (req, res) => {
@@ -559,27 +575,36 @@ const addFundsToUser = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Funds can only be added to creators or admins.' });
     }
 
-    // Find if this user already has an active or paused campaign
-    let campaignId = null;
-    const campaignRes = await pool.query(
-      `SELECT id FROM campaigns 
-       WHERE creator_id = $1 AND status IN ('active', 'paused') 
-       ORDER BY created_at DESC LIMIT 1`,
-      [id]
-    );
+    let campaignId = req.body.campaign_id;
 
-    if (campaignRes.rows.length > 0) {
-      campaignId = campaignRes.rows[0].id;
-    } else {
-      // Create a default adjustment campaign for the user so they have a place to withdraw from
-      console.log(`[ADMIN ADJUSTMENT] Creator ${id} has no campaign. Creating 'General Balance Adjustment' campaign.`);
-      const newCampaign = await pool.query(
-        `INSERT INTO campaigns (creator_id, title, description, category, goal_amount, status)
-         VALUES ($1, $2, $3, 'general', 1000000.00, 'active')
-         RETURNING id`,
-        [id, 'General Balance Adjustment', 'System-generated campaign for platform wallet balance adjustments.']
+    if (!campaignId) {
+      // Find if this user already has an active or paused campaign
+      const campaignRes = await pool.query(
+        `SELECT id FROM campaigns 
+         WHERE creator_id = $1 AND status IN ('active', 'paused') 
+         ORDER BY created_at DESC LIMIT 1`,
+        [id]
       );
-      campaignId = newCampaign.rows[0].id;
+
+      if (campaignRes.rows.length > 0) {
+        campaignId = campaignRes.rows[0].id;
+      } else {
+        // Create a default adjustment campaign for the user so they have a place to withdraw from
+        console.log(`[ADMIN ADJUSTMENT] Creator ${id} has no campaign. Creating 'General Balance Adjustment' campaign.`);
+        const newCampaign = await pool.query(
+          `INSERT INTO campaigns (creator_id, title, description, category, goal_amount, status)
+           VALUES ($1, $2, $3, 'general', 1000000.00, 'active')
+           RETURNING id`,
+          [id, 'General Balance Adjustment', 'System-generated campaign for platform wallet balance adjustments.']
+        );
+        campaignId = newCampaign.rows[0].id;
+      }
+    } else {
+       // Verify the provided campaign belongs to the user
+       const campaignRes = await pool.query('SELECT id FROM campaigns WHERE id = $1 AND creator_id = $2', [campaignId, id]);
+       if (campaignRes.rows.length === 0) {
+         return res.status(404).json({ success: false, message: 'Provided campaign not found or does not belong to this user.' });
+       }
     }
 
     const { v4: uuidv4 } = require('uuid');
@@ -701,5 +726,6 @@ module.exports = {
   getSettings, updateSetting, getStripeStatus, testEmail,
   verifyPendingDonations,
   addFundsToCampaign,
-  addFundsToUser
+  addFundsToUser,
+  deleteDonation
 };
