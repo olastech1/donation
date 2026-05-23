@@ -172,6 +172,26 @@ module.exports = {
       `Your donation of $${amount} to ${campaignTitle} was successful.`
     ),
 
+  sendDonationAlertEmail: (creatorEmail, creatorName, donorName, amount, campaignTitle) =>
+    sendEmail(
+      creatorEmail,
+      `You just received a $${amount} donation on Donate Plea!`,
+      `
+        <h3 style="color: #0f172a; font-size: 20px; margin-top: 0; margin-bottom: 16px;">Great news, ${creatorName}! 🎉</h3>
+        <p style="margin: 0 0 24px;">Someone just made a donation to your campaign <strong style="color: #9333ea;">"${campaignTitle}"</strong>.</p>
+
+        <div style="background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1px solid #86efac; border-radius: 12px; padding: 24px; margin: 0 0 24px; text-align: center;">
+          <p style="margin: 0 0 4px; font-size: 13px; color: #15803d; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;">Donation Received</p>
+          <p style="margin: 0; font-size: 42px; font-weight: 800; color: #15803d; line-height: 1.1;">$${amount}</p>
+          <p style="margin: 8px 0 0; font-size: 14px; color: #166534;">from <strong>${donorName}</strong></p>
+        </div>
+
+        <p style="margin: 0 0 16px;">Log in to your dashboard to view your full campaign progress and manage your funds.</p>
+        ${getButtonHtml(`${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard`, 'View My Dashboard')}
+      `,
+      `You received a new $${amount} donation on your campaign "${campaignTitle}"`
+    ),
+
   // 4. Withdrawal Emails
   sendWithdrawalRequestEmail: (email, amount, campaignTitle) =>
     sendEmail(
