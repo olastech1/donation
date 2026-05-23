@@ -107,7 +107,7 @@ const createStripeKycSession = async (req, res) => {
     });
   } catch (err) {
     console.error('Create Stripe KYC Session error:', err);
-    res.status(500).json({ success: false, message: 'Failed to initiate identity verification.' });
+    res.status(500).json({ success: false, message: err.message || 'Failed to initiate identity verification.' });
   }
 };
 
@@ -176,7 +176,7 @@ const syncStripeKycSession = async (req, res) => {
     });
   } catch (err) {
     console.error('Sync Stripe KYC error:', err);
-    res.status(500).json({ success: false, message: 'Failed to check verification status.' });
+    res.status(500).json({ success: false, message: err.message || 'Failed to check verification status.' });
   }
 };
 
