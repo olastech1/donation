@@ -25,7 +25,11 @@ async function getSetting(key) {
         [row.setting_value, ENCRYPTION_KEY]
       );
       return decrypted.rows[0].val;
-    } catch {
+    } catch (err) {
+      if (typeof row.setting_value === 'string' && row.setting_value.startsWith('\\x')) {
+        console.error(`[SETTINGS] Decryption failed for key "${key}". Returning null:`, err.message);
+        return null;
+      }
       // Value may not be encrypted yet (empty or plaintext)
       return row.setting_value;
     }
