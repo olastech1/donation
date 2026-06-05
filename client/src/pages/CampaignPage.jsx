@@ -156,7 +156,7 @@ export default function CampaignPage() {
 
             {/* Tabs */}
             <div style={{ display: 'flex', gap: '4px', margin: '32px 0 24px', borderBottom: '1px solid var(--border)' }}>
-              {['story', 'updates', 'donors'].map(t => (
+              {['story', 'updates'].map(t => (
                 <button key={t} onClick={() => setTab(t)} style={{
                   padding: '10px 20px', background: 'none', border: 'none', cursor: 'pointer',
                   color: tab === t ? 'var(--accent)' : 'var(--text-muted)',
@@ -188,8 +188,8 @@ export default function CampaignPage() {
               )) : <p style={{ color: 'var(--text-muted)' }}>No updates yet.</p>
             )}
 
-            {tab === 'donors' && (
-              <div style={{ marginTop: '20px' }}>
+            
+              <div style={{ marginTop: '48px', paddingTop: '32px', borderTop: '1px solid var(--border)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                   <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#0f172a', display: 'flex', alignItems: 'center', gap: '12px' }}>
                     Donations <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600, background: '#f8fafc', border: '1px solid #e2e8f0', padding: '2px 10px', borderRadius: '12px' }}>{campaign.donor_count || donors.length}</span>
@@ -213,7 +213,6 @@ export default function CampaignPage() {
                   );
                 }) : <p style={{ color: 'var(--text-muted)' }}>Be the first to donate!</p>}
               </div>
-            )}
           </div>
 
           {/* Right: Sticky Donation Box */}
