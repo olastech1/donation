@@ -17,6 +17,7 @@ import AboutPage from './pages/AboutPage';
 import ContactPage from './pages/ContactPage';
 import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
+import RefundPolicyPage from './pages/RefundPolicyPage';
 import CreatorDashboardPage from './pages/CreatorDashboardPage';
 import KycCallbackPage from './pages/KycCallbackPage';
 import { useAuth } from './context/AuthContext';
@@ -55,6 +56,7 @@ function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
+          <Route path="/refund-policy" element={<RefundPolicyPage />} />
           <Route path="*" element={
             <div className="page container" style={{ textAlign: 'center' }}>
               <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '4rem', marginBottom: '16px' }}>404</h1>

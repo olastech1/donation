@@ -10,6 +10,7 @@ export default function Footer() {
           <Link to="/contact" style={{ color: 'var(--slate-300)', textDecoration: 'none' }}>Contact</Link>
           <Link to="/privacy" style={{ color: 'var(--slate-300)', textDecoration: 'none' }}>Privacy Policy</Link>
           <Link to="/terms" style={{ color: 'var(--slate-300)', textDecoration: 'none' }}>Terms & Conditions</Link>
+          <Link to="/refund-policy" style={{ color: 'var(--slate-300)', textDecoration: 'none' }}>Refund & Cancellation Policy</Link>
         </div>
         <p style={{ color: 'var(--slate-500)', fontSize: '0.85rem', marginTop: '16px' }}>
           © {new Date().getFullYear()} Donate Plea. Every plea deserves an answer.
