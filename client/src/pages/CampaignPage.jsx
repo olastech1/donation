@@ -15,7 +15,14 @@ export default function CampaignPage() {
 
   useEffect(() => {
     const handleScroll = () => {
-      setShowStickyBar(window.scrollY > 400);
+      const checkoutForm = document.querySelector('.checkout-container');
+      if (checkoutForm) {
+        const rect = checkoutForm.getBoundingClientRect();
+        const isFormVisible = rect.top < window.innerHeight;
+        setShowStickyBar(window.scrollY > 400 && !isFormVisible);
+      } else {
+        setShowStickyBar(window.scrollY > 400);
+      }
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
