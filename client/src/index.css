@@ -682,6 +682,11 @@ img { max-width: 100%; height: auto; display: block; }
     border-top-right-radius: 24px;
     padding: 20px 24px;
     z-index: 1000;
+    transform: translateY(150%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .mobile-sticky-bar.visible {
+    transform: translateY(0);
   }
   .campaign-detail {
     padding-bottom: 220px; /* Make space for the sticky bar */

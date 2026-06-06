@@ -159,7 +159,8 @@ const getCampaignDonors = async (req, res) => {
           WHEN d.is_anonymous THEN 'Anonymous'
           WHEN d.user_id IS NOT NULL THEN u.name
           ELSE d.guest_name
-        END AS donor_name
+        END AS donor_name,
+        d.comment
        FROM donations d
        LEFT JOIN users u ON d.user_id = u.id
        WHERE d.campaign_id = $1 AND d.status = 'success'

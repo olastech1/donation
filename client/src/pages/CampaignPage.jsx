@@ -10,6 +10,16 @@ export default function CampaignPage() {
   const [updates, setUpdates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('story');
+  const [showStickyBar, setShowStickyBar] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowStickyBar(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     Promise.all([
@@ -172,7 +182,33 @@ export default function CampaignPage() {
             {/* Tab Content */}
             {tab === 'story' && (
               <div style={{ color: 'var(--text-secondary)', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                {campaign.description}
+                {campaign.description && campaign.description.length > 300 && !isExpanded ? (
+                  <>
+                    {campaign.description.slice(0, 300)}...
+                    <div style={{ marginTop: '12px' }}>
+                      <button 
+                        onClick={() => setIsExpanded(true)}
+                        style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: '0.95rem' }}
+                      >
+                        Read More
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {campaign.description}
+                    {campaign.description && campaign.description.length > 300 && (
+                      <div style={{ marginTop: '12px' }}>
+                        <button 
+                          onClick={() => setIsExpanded(false)}
+                          style={{ background: 'none', border: 'none', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', padding: 0, fontSize: '0.95rem' }}
+                        >
+                          Read Less
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             )}
 
@@ -208,6 +244,11 @@ export default function CampaignPage() {
                         <div style={{ fontSize: '0.9rem', color: '#64748b' }}>
                           <strong style={{ color: '#0f172a', fontWeight: 700 }}>${Number(d.amount).toLocaleString()}</strong> <span style={{ margin: '0 4px', color: '#cbd5e1' }}>•</span> {timeAgo(d.created_at)}
                         </div>
+                        {d.comment && (
+                          <div style={{ marginTop: '8px', fontSize: '0.95rem', color: '#334155', fontStyle: 'italic', background: '#f8fafc', padding: '10px 14px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                            "{d.comment}"
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
@@ -222,7 +263,7 @@ export default function CampaignPage() {
         </div>
 
           {/* Mobile Sticky Bar */}
-          <div className="mobile-sticky-bar">
+          <div className={`mobile-sticky-bar ${showStickyBar ? 'visible' : ''}`}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '12px' }}>
               {/* Circular Progress */}
               <div style={{ position: 'relative', width: '52px', height: '52px', flexShrink: 0 }}>

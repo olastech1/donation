@@ -11,6 +11,7 @@ export default function GuestCheckoutForm({ campaignId, campaignTitle }) {
   const [guestEmail, setGuestEmail] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [donationType, setDonationType] = useState('one-time');
+  const [comment, setComment] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -33,7 +34,8 @@ export default function GuestCheckoutForm({ campaignId, campaignTitle }) {
         campaign_id: campaignId,
         amount: parseFloat(amount),
         is_anonymous: isAnonymous,
-        donation_type: donationType
+        donation_type: donationType,
+        comment: comment
       };
       if (!user) {
         payload.guest_name = guestName || 'Guest Donor';
@@ -137,6 +139,20 @@ export default function GuestCheckoutForm({ campaignId, campaignTitle }) {
             </div>
           </>
         )}
+
+        {/* Comment field */}
+        <div className="form-group">
+          <label className="form-label">Add a comment (optional)</label>
+          <textarea
+            className="form-input"
+            placeholder="Words of support..."
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            rows="2"
+            style={{ resize: 'vertical' }}
+            id="donation-comment-input"
+          />
+        </div>
 
         {/* Anonymous toggle */}
         <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

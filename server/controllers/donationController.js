@@ -13,7 +13,7 @@ const emailService = require('../services/emailService');
  */
 const initiateDonation = async (req, res) => {
   try {
-    const { campaign_id, amount, guest_name, guest_email, is_anonymous, donation_type } = req.body;
+    const { campaign_id, amount, guest_name, guest_email, is_anonymous, donation_type, comment } = req.body;
 
     if (!campaign_id || !amount) {
       return res.status(400).json({ success: false, message: 'Campaign ID and amount are required.' });
@@ -66,7 +66,8 @@ const initiateDonation = async (req, res) => {
       is_anonymous: is_anonymous ? 'true' : 'false',
       user_id: req.user ? req.user.id : '',
       platform_fee: platformFee.toString(),
-      is_recurring: isMonthly ? 'true' : 'false'
+      is_recurring: isMonthly ? 'true' : 'false',
+      comment: (comment || '').substring(0, 450)
     };
 
     const sessionConfig = {
@@ -101,8 +102,8 @@ const initiateDonation = async (req, res) => {
     // Insert pending donation record
     await pool.query(
       `INSERT INTO donations
-        (campaign_id, user_id, guest_name, guest_email, amount, platform_fee, is_anonymous, stripe_checkout_session_id, status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')`,
+        (campaign_id, user_id, guest_name, guest_email, amount, platform_fee, is_anonymous, stripe_checkout_session_id, status, comment)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending', $9)`,
       [
         campaign_id,
         req.user ? req.user.id : null,
@@ -111,7 +112,8 @@ const initiateDonation = async (req, res) => {
         amount,
         platformFee,
         is_anonymous || false,
-        session.id
+        session.id,
+        comment || null
       ]
     );
 
@@ -157,7 +159,7 @@ const stripeWebhook = async (req, res) => {
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object;
 
-      const { campaign_id, donor_name, donor_email, is_anonymous, user_id, platform_fee } = session.metadata;
+      const { campaign_id, donor_name, donor_email, is_anonymous, user_id, platform_fee, comment } = session.metadata;
 
       // Update the donation record
       const result = await pool.query(
@@ -175,9 +177,9 @@ const stripeWebhook = async (req, res) => {
         // Donation record might not exist yet (race condition) — create it
         await pool.query(
           `INSERT INTO donations
-            (campaign_id, user_id, guest_name, guest_email, amount, platform_fee, is_anonymous, stripe_checkout_session_id, stripe_payment_intent_id, status)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'success')
-           ON CONFLICT (stripe_checkout_session_id) DO UPDATE SET status = 'success', stripe_payment_intent_id = $9`,
+            (campaign_id, user_id, guest_name, guest_email, amount, platform_fee, is_anonymous, stripe_checkout_session_id, stripe_payment_intent_id, status, comment)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'success', $10)
+           ON CONFLICT (stripe_checkout_session_id) DO UPDATE SET status = 'success', stripe_payment_intent_id = $9, comment = COALESCE(donations.comment, $10)`,
           [
             campaign_id,
             user_id || null,
@@ -187,7 +189,8 @@ const stripeWebhook = async (req, res) => {
             parseFloat(platform_fee || 0),
             is_anonymous === 'true',
             session.id,
-            session.payment_intent
+            session.payment_intent,
+            comment || null
           ]
         );
       }
