@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import CampaignCard from '../components/campaigns/CampaignCard';
 import { campaignAPI, donationAPI } from '../services/api';
 import { useAuth } from '../context/AuthContext';
-import { useCurrency, formatEquivalent } from '../utils/currency';
 
 export default function HomePage() {
   const { user } = useAuth();
@@ -17,7 +16,6 @@ export default function HomePage() {
   const [trackResult, setTrackResult] = useState(null);
   const [trackError, setTrackError] = useState('');
   const [trackLoading, setTrackLoading] = useState(false);
-  const currencyData = useCurrency();
 
   const handleTrack = async (e) => {
     e.preventDefault();
@@ -78,11 +76,6 @@ export default function HomePage() {
           <div className="stat-item">
             <div className="stat-value">
               {stats ? `$${Number(stats.donations.total_raised).toLocaleString()}` : '...'}
-              {stats && formatEquivalent(stats.donations.total_raised, currencyData) && (
-                <div style={{ fontSize: '0.8rem', opacity: 0.8, fontWeight: 500 }}>
-                  {formatEquivalent(stats.donations.total_raised, currencyData)}
-                </div>
-              )}
             </div>
             <div className="stat-label">Total Raised</div>
           </div>
@@ -155,11 +148,6 @@ export default function HomePage() {
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ color: 'var(--emerald-600)', fontWeight: 'bold', fontSize: '1.2rem' }}>
                     ${Number(d.amount).toLocaleString()}
-                    {formatEquivalent(d.amount, currencyData) && (
-                      <span style={{ fontSize: '0.85rem', color: 'var(--slate-500)', marginLeft: '6px' }}>
-                        {formatEquivalent(d.amount, currencyData)}
-                      </span>
-                    )}
                   </div>
                   <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{new Date(d.created_at).toLocaleDateString()}</div>
                 </div>

@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { useCurrency } from '../../utils/currency';
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const { currency, changeCurrency } = useCurrency();
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -23,17 +21,6 @@ export default function Navbar() {
           {open ? '✕' : '☰'}
         </button>
         <ul className={`navbar-links ${open ? 'open' : ''}`}>
-          <li style={{ display: 'flex', alignItems: 'center' }}>
-            <select 
-              value={currency || 'USD'}
-              onChange={(e) => changeCurrency(e.target.value)}
-              style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid var(--border-color)', backgroundColor: 'var(--surface)', color: 'var(--text-color)', fontSize: '0.9rem', cursor: 'pointer' }}
-            >
-              <option value="USD">USD ($)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="GBP">GBP (£)</option>
-            </select>
-          </li>
           <li><Link to="/explore" onClick={() => setOpen(false)}>Explore</Link></li>
           {user ? (
             <>
